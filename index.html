@@ -3,39 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>超リアル！じはんき・かけ算うりあげシミュレーター</title>
-    <!-- Tailwind CSS for modern layout -->
+    <title>超リアル！自販機かけざん学習ゲーム</title>
+    <!-- Tailwind CSS for modern responsive styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts for rounded typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Vending Machine and UI Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter and Zen Maru Gothic -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for Celebration on Correct Answers -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <style>
         body {
-            font-family: 'M+PLUS Rounded 1c', sans-serif;
-            background-color: #0f172a; /* Dark sleek background to make the glowing machine pop */
+            font-family: 'Zen Maru Gothic', 'Inter', sans-serif;
+            background-color: #f0f4f8;
         }
-        /* Custom animations for the vending machine dispenser */
-        @keyframes fall-and-bounce {
-            0% { transform: translateY(-200px) rotate(0deg); opacity: 0; }
-            50% { transform: translateY(0px) rotate(15deg); opacity: 1; }
-            70% { transform: translateY(-20px) rotate(-10deg); }
-            100% { transform: translateY(0) rotate(0deg); }
-        }
-        .dispensed-can {
-            animation: fall-and-bounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-        /* Glowing neon and realistic glass highlights */
-        .glass-reflection {
-            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 100%);
-        }
-        .neon-blue {
-            box-shadow: 0 0 12px rgba(59, 130, 246, 0.8);
-        }
-        .neon-red {
-            box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
-        }
-        /* Hide default scrollbar for sleek side panel */
+        /* Custom scrollbar hiding */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -43,458 +26,285 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        /* Glow animations */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 4px #eab308, inset 0 0 4px #eab308; }
+            50% { box-shadow: 0 0 12px #facc15, inset 0 0 8px #facc15; }
+        }
+        .active-buy-btn {
+            animation: pulse-glow 1.5s infinite;
+        }
+        /* Vending machine styling */
+        .vending-glass {
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+        }
     </style>
 </head>
-<body class="min-h-screen text-slate-100 flex flex-col pb-12 bg-slate-950">
+<body class="min-h-screen pb-12 text-slate-800">
 
-    <header class="bg-slate-900 border-b border-slate-800 text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+    <!-- Non-sticky Header (scrolls with page as requested) -->
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-6 px-4 shadow-md mb-6">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <div class="bg-red-600 text-white p-2 rounded-xl shadow-md text-xl animate-pulse">🏪</div>
+                <div class="bg-yellow-400 p-2 rounded-xl text-indigo-900 shadow">
+                    <i class="fa-solid fa-calculator text-2xl"></i>
+                </div>
                 <div>
-                    <h1 class="text-lg md:text-xl font-black tracking-wider flex items-center gap-2">
-                        リアルじはんき・かけ算うりあげシミュレーター
-                    </h1>
-                    <p class="text-[11px] text-slate-400">教材画像「IMG_4021.jpg」「IMG_4022.jpg」に基づく、超リアルな自販機体験と比例学習</p>
+                    <h1 class="text-xl md:text-2xl font-black tracking-wide">自販機うりあげ かけざんゲーム</h1>
+                    <p class="text-xs text-blue-100 mt-0.5">本物のお買い物と掛け算（比例）のひみつを学ぼう！</p>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-2">
-                <button onclick="toggleMute()" id="mute-btn" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-xs transition-colors flex items-center gap-1.5">
-                    <span id="mute-icon">🔊</span> <span id="mute-text">音量：ON</span>
+            <!-- Mode Switcher -->
+            <div class="flex gap-2 bg-indigo-900/40 p-1.5 rounded-xl border border-indigo-500/30">
+                <button id="mode-free-btn" onclick="switchMode('free')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-indigo-900 shadow-sm">
+                    じゆうに遊ぶ
                 </button>
-                <button onclick="openGuideModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-1.5 rounded-lg text-xs font-bold transition-all transform hover:scale-105 flex items-center gap-1">
-                    📖 比例・かけ算ガイド
+                <button id="mode-challenge-btn" onclick="switchMode('challenge')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-indigo-100 hover:bg-white/10">
+                    うりあげミッション
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- MAIN INTERACTIVE CONTAINER -->
-    <main class="max-w-7xl mx-auto px-4 mt-6 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <main class="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- LEFT COLUMN: REALISTIC VENDING MACHINE DISPLAY -->
-        <div class="lg:col-span-7 flex flex-col items-center">
+        <!-- LEFT COLUMN: The Vending Machine Simulator (5 cols) -->
+        <div class="lg:col-span-6 xl:col-span-5 bg-zinc-800 p-3 rounded-[2.5rem] shadow-2xl border-4 border-zinc-700 flex flex-col gap-3 relative">
             
-            <!-- Mode Toggle Header -->
-            <div class="w-full max-w-lg bg-slate-900 p-1 rounded-xl mb-4 flex gap-1 border border-slate-800">
-                <button id="tab-free" onclick="switchMode('free')" class="flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center bg-blue-600 text-white shadow-md">
-                    🍹 じゆうに遊ぶ（うりあげ計算）
-                </button>
-                <button id="tab-challenge" onclick="switchMode('challenge')" class="flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center text-slate-400 hover:bg-slate-800 hover:text-white">
-                    🏆 売上チャレンジ（問題）
-                </button>
+            <!-- Vending Machine Brand/Banner -->
+            <div class="bg-red-600 text-white text-center py-2 px-4 rounded-2xl font-black tracking-wider text-sm shadow flex justify-between items-center px-6">
+                <span>🥤 SANSUI VENDING</span>
+                <span class="text-xs bg-red-800 px-2 py-0.5 rounded text-red-200">COLD</span>
             </div>
 
-            <!-- THE VENDING MACHINE OUTER FRAME (Highly Realistic, IMG_4022 Inspired) -->
-            <div class="relative w-full max-w-lg bg-gradient-to-r from-red-600 via-red-500 to-red-700 rounded-[2.5rem] p-4 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] border-t-[6px] border-red-400 border-b-[8px] border-red-800 flex flex-col select-none">
+            <!-- Main Showcase Window -->
+            <div class="vending-glass rounded-2xl p-3 border-2 border-zinc-900 shadow-inner flex flex-col gap-5">
                 
-                <!-- White inner chassis border to simulate a real unit -->
-                <div class="bg-slate-950 rounded-2xl p-2.5 border-4 border-zinc-800 shadow-inner flex flex-col relative">
-                    <!-- Glass Reflection Overlay -->
-                    <div class="absolute top-0 left-0 w-full h-full glass-reflection rounded-xl pointer-events-none z-20"></div>
+                <!-- ROW 1 (Upper 10 Items) -->
+                <div>
+                    <div class="text-[9px] text-blue-400 font-bold mb-1 border-b border-blue-900/50 pb-0.5 flex justify-between">
+                        <span>上段 (1〜10)</span>
+                        <span>つめた〜い ¥120〜¥180</span>
+                    </div>
+                    <div id="row-1-container" class="grid grid-cols-10 gap-1.5">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
 
-                    <!-- SHOWCASE ROW 1 (TOP) -->
-                    <div class="relative bg-slate-900 rounded-lg p-2 mb-3 border-b-2 border-slate-950">
-                        <!-- LED Light Tube effect top -->
-                        <div class="absolute top-0 left-0 w-full h-[3px] bg-sky-200 opacity-60 shadow-[0_0_10px_#7dd3fc]"></div>
-                        <div class="grid grid-cols-10 gap-1 text-center" id="showcase-row-1">
-                            <!-- Items populated dynamically -->
+                <!-- ROW 2 (Middle 10 Items) -->
+                <div>
+                    <div class="text-[9px] text-blue-400 font-bold mb-1 border-b border-blue-900/50 pb-0.5 flex justify-between">
+                        <span>中段 (11〜20)</span>
+                        <span>つめた〜い ¥120〜¥170</span>
+                    </div>
+                    <div id="row-2-container" class="grid grid-cols-10 gap-1.5">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- ROW 3 (Lower 10 Items) -->
+                <div>
+                    <div class="text-[9px] text-blue-400 font-bold mb-1 border-b border-blue-900/50 pb-0.5 flex justify-between">
+                        <span>下段 (21〜30)</span>
+                        <span>つめた〜い ¥120〜¥160</span>
+                    </div>
+                    <div id="row-3-container" class="grid grid-cols-10 gap-1.5">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Vending Control Panel (Coins, Balance Screen, Refund & Dispenser) -->
+            <div class="grid grid-cols-12 gap-3 mt-1 pt-2 border-t border-zinc-700/80 items-stretch">
+                
+                <!-- Left: Coke ON & Guide -->
+                <div class="col-span-4 bg-zinc-900 rounded-xl p-2 border border-zinc-700 flex flex-col justify-between">
+                    <div class="bg-red-600 rounded-lg py-1 px-1.5 text-center shadow">
+                        <div class="text-[8px] font-black text-white leading-none tracking-tighter">Coke ON</div>
+                        <div class="text-[6px] text-red-200 mt-0.5 scale-90">スマホをタッチ</div>
+                    </div>
+                    <div class="text-[8px] text-zinc-400 leading-tight mt-2 text-center font-bold">
+                        🪙 100円を入れて<br>ジュースを選ぼう！
+                    </div>
+                </div>
+
+                <!-- Center: Vending Digital Screen for Current Balance -->
+                <div class="col-span-5 bg-zinc-900 rounded-xl p-2 border border-zinc-700 flex flex-col justify-between">
+                    <div>
+                        <span class="text-[8px] text-zinc-500 block text-center uppercase tracking-wider font-bold">とうにゅう金額 (のこり)</span>
+                        <div id="display-container" class="bg-stone-950 text-emerald-400 px-1 py-1.5 rounded font-mono text-center text-xl tracking-widest border border-stone-800 shadow-inner transition-all duration-200">
+                            ¥<span id="machine-display">0</span>
                         </div>
                     </div>
-
-                    <!-- SHOWCASE ROW 2 (MIDDLE) -->
-                    <div class="relative bg-slate-900 rounded-lg p-2 mb-3 border-b-2 border-slate-950">
-                        <div class="absolute top-0 left-0 w-full h-[3px] bg-sky-200 opacity-60 shadow-[0_0_10px_#7dd3fc]"></div>
-                        <div class="grid grid-cols-10 gap-1 text-center" id="showcase-row-2">
-                            <!-- Items populated dynamically -->
-                        </div>
+                    <div class="flex justify-center mt-1">
+                        <div class="bg-stone-950 border-2 border-zinc-700 h-1 w-8 rounded shadow-inner"></div>
                     </div>
+                </div>
 
-                    <!-- SHOWCASE ROW 3 (BOTTOM) -->
-                    <div class="relative bg-slate-900 rounded-lg p-2 mb-3 border-b-2 border-slate-950">
-                        <div class="absolute top-0 left-0 w-full h-[3px] bg-sky-200 opacity-60 shadow-[0_0_10px_#7dd3fc]"></div>
-                        <div class="grid grid-cols-10 gap-1 text-center" id="showcase-row-3">
-                            <!-- Items populated dynamically -->
-                        </div>
-                    </div>
-
-                    <!-- LOWER OPERATIONAL PANEL (Coke ON Panel, Coin Slot, Dispenser) -->
-                    <div class="grid grid-cols-12 gap-3 mt-1 pt-2 border-t border-slate-800 items-stretch">
-                        
-                        <!-- Left: Instructions / CokeON light -->
-                        <div class="col-span-4 bg-zinc-900 rounded-xl p-2 border border-zinc-800 flex flex-col justify-between">
-                            <div class="bg-red-600 rounded-lg py-1 px-1.5 text-center shadow">
-                                <div class="text-[8px] font-black text-white leading-none tracking-tighter">Coke ON</div>
-                                <div class="text-[6px] text-red-200 mt-0.5 scale-90">スマホをタッチ</div>
-                            </div>
-                            <div class="text-[7px] text-zinc-400 leading-tight mt-2 text-center">
-                                💡 ボタンをおしてね！
-                            </div>
-                        </div>
-
-                        <!-- Center: High-Tech Coin slot and Ledger Screen -->
-                        <div class="col-span-5 bg-zinc-900 rounded-xl p-2 border border-zinc-800 flex flex-col justify-between">
-                            <div>
-                                <span class="text-[8px] text-zinc-500 block text-center uppercase tracking-wider font-bold">うりあげ総額</span>
-                                <div class="bg-stone-950 text-emerald-400 px-1 py-1 rounded font-mono text-center text-lg tracking-widest border border-stone-800 shadow-inner neon-blue">
-                                    ¥<span id="machine-display">????</span>
-                                </div>
-                            </div>
-                            <div class="flex justify-center mt-1">
-                                <div class="bg-stone-950 border-2 border-zinc-700 h-1 w-8 rounded shadow-inner"></div>
-                            </div>
-                        </div>
-
-                        <!-- Right: Interactive 100-Yen Coin Slot -->
-                        <div class="col-span-3 bg-zinc-900 rounded-xl p-2 border border-zinc-800 flex flex-col items-center justify-center gap-1.5">
-                            <span class="text-[8px] text-zinc-500 font-bold">100円をいれる</span>
-                            <button onclick="insertCoin()" class="w-10 h-10 bg-gradient-to-tr from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 border-4 border-yellow-700 rounded-full flex items-center justify-center shadow-lg transform active:scale-90 transition-all text-[9px] text-yellow-950 font-black">
-                                100
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Dispensation Chamber Tray -->
-                    <div class="bg-stone-950 h-24 mt-3 rounded-2xl border-4 border-zinc-800 flex items-center justify-center relative overflow-hidden shadow-[inset_0_10px_20px_rgba(0,0,0,0.9)]">
-                        <div class="absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-stone-900 to-transparent pointer-events-none"></div>
-                        
-                        <div id="dispense-chamber" class="flex gap-1 items-end justify-center w-full px-4 h-full pb-2 overflow-x-auto no-scrollbar">
-                            <span id="dispense-placeholder" class="text-zinc-600 text-[10px] font-bold italic select-none animate-pulse">ジュースがここに落ちてくるよ！</span>
-                        </div>
-
-                        <!-- Push Gate Overlay Flap -->
-                        <div class="absolute bottom-0 left-0 w-full h-3 bg-zinc-800 border-t border-zinc-700 flex items-center justify-center text-[7px] text-zinc-500">
-                            PUSH TO GET DRINKS
-                        </div>
-                    </div>
-
-                    <!-- Interactive Reset / Take Drinks Button -->
-                    <button onclick="clearDispenser()" id="collect-btn" class="mt-2.5 w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 py-2 rounded-xl text-xs font-black shadow-lg border-b-4 border-amber-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-1.5 opacity-50 cursor-not-allowed" disabled>
-                        🥤 落ちてきたジュースをすべて取り出す（リセット）
+                <!-- Right: Coin Slot and Refund Lever -->
+                <div class="col-span-3 bg-zinc-900 rounded-xl p-2 border border-zinc-700 flex flex-col items-center justify-between gap-1.5">
+                    <button onclick="insertCoin()" class="w-10 h-10 bg-gradient-to-tr from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 border-4 border-yellow-700 rounded-full flex items-center justify-center shadow-lg transform active:scale-95 transition-all text-[10px] text-yellow-950 font-black shrink-0">
+                        100
+                    </button>
+                    <button onclick="refundCoins()" class="w-full py-1 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded text-[8px] font-bold border border-zinc-600 active:scale-95 transition-all leading-none">
+                        おつり・返却 ↩
                     </button>
                 </div>
+
             </div>
+
+            <!-- Bottom: Dispenser Chamber -->
+            <div class="mt-1">
+                <span class="text-[8px] text-zinc-500 block mb-1 font-bold">🥤 取り出し口 (おちたジュース)</span>
+                <div id="dispense-chamber" class="bg-zinc-950 border-4 border-zinc-900 h-24 rounded-2xl relative flex items-center justify-center p-3 gap-2 overflow-x-auto no-scrollbar shadow-inner">
+                    <span id="dispense-placeholder" class="text-zinc-600 text-[10px] font-bold italic select-none animate-pulse">ジュースがここに落ちてくるよ！</span>
+                </div>
+                <!-- Collect Button -->
+                <button id="collect-btn" onclick="collectDrinks()" disabled class="w-full mt-2 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-xs rounded-xl shadow opacity-50 cursor-not-allowed transition-all">
+                    ジュースをすべて取り出す 🎒
+                </button>
+            </div>
+
         </div>
 
-        <!-- RIGHT COLUMN: MISSIONS, STATISTICS TABLE, GRAPH -->
-        <div class="lg:col-span-5 flex flex-col gap-6">
-
-            <!-- FREE PLAY ANSWER FORM -->
-            <div id="free-calc-panel" class="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-5 text-white shadow-xl border border-emerald-500">
-                <div class="flex items-center justify-between border-b border-white/20 pb-2.5 mb-3">
-                    <div class="flex items-center gap-2">
-                        <span class="bg-white text-emerald-700 rounded-full w-6 h-6 flex items-center justify-center text-xs font-black shadow-md">✏️</span>
-                        <h2 class="font-bold text-sm">自分でうりあげを計算しよう！</h2>
-                    </div>
-                    <span class="text-[10px] bg-emerald-700 px-2.5 py-0.5 rounded-full font-bold">自販機連動</span>
+        <!-- RIGHT COLUMN: Math Sales Board & Graph (7 cols) -->
+        <div class="lg:col-span-6 xl:col-span-7 flex flex-col gap-6">
+            
+            <!-- CHALLENGE ALERT BANNER (Shown when Challenge Mode is active) -->
+            <div id="challenge-banner" class="hidden bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-3xl shadow-lg border-2 border-indigo-400 flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs bg-purple-800 px-3 py-1 rounded-full font-black text-purple-200">LEVEL <span id="challenge-level">1</span></span>
+                    <span class="text-[10px] bg-indigo-500/30 px-2 py-0.5 rounded font-mono">Mission Mode</span>
                 </div>
-                
-                <div class="bg-black/20 p-3 rounded-xl mb-3 border border-white/10 text-xs leading-relaxed">
-                    <p class="font-bold">
-                        ジュースを購入すると、売上表示が <span class="text-yellow-300">「????」</span> に隠れます。
-                        <br>本数から掛け算をして、合計金額を計算して当ててみよう！
-                    </p>
+                <div>
+                    <h3 class="text-sm font-bold text-yellow-300">🎯 今日のミッション：</h3>
+                    <p id="challenge-text" class="text-base font-black mt-1 leading-relaxed">ロード中...</p>
                 </div>
-
-                <div class="flex flex-col gap-2">
-                    <div class="flex gap-2">
-                        <input type="number" id="free-answer-input" class="flex-grow px-3 py-2 rounded-xl text-slate-900 text-sm font-black text-center focus:ring-4 focus:ring-emerald-300 focus:outline-none placeholder-slate-400" placeholder="計算した合計を入力">
-                        <span class="text-sm self-center font-black text-white">円</span>
-                        <button onclick="checkFreeAnswer()" class="bg-yellow-400 hover:bg-yellow-500 text-slate-900 px-5 py-2 rounded-xl text-xs font-black shadow-lg transition-all flex items-center gap-1 shrink-0">
-                            答え合わせ！
-                        </button>
-                    </div>
-                    <div class="flex justify-between items-center px-1">
-                        <span class="text-[10px] text-emerald-100">※ ジュースを追加・変更するとリセットされます</span>
-                        <button onclick="revealFreeAnswer()" class="text-[10px] text-yellow-200 underline hover:text-white font-bold">
-                            どうしてもわからない（答えを見る）
-                        </button>
-                    </div>
+                <div class="bg-indigo-900/50 rounded-xl p-3 border border-indigo-500/20 text-xs text-indigo-100 flex flex-col gap-1.5">
+                    <div id="challenge-tips"></div>
                 </div>
             </div>
 
-            <!-- CHALLENGE MISSIONS -->
-            <div id="challenge-panel" class="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-5 text-white shadow-xl border border-violet-500 hidden">
-                <div class="flex items-center justify-between border-b border-white/20 pb-2.5 mb-3">
-                    <div class="flex items-center gap-2">
-                        <span class="bg-white text-violet-700 rounded-full w-6 h-6 flex items-center justify-center text-xs font-black shadow-md animate-bounce">Q</span>
-                        <h2 class="font-bold text-sm">うりあげミッションに挑戦中！</h2>
-                    </div>
-                    <div class="bg-violet-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-inner">
-                        レベル <span id="challenge-level">1</span>
-                    </div>
-                </div>
+            <!-- MAIN SALES BOARD & SUBMISSION -->
+            <div class="bg-white rounded-3xl p-5 shadow-xl border border-slate-100 flex flex-col gap-4">
                 
-                <div class="bg-black/20 p-3.5 rounded-xl mb-3 border border-white/10">
-                    <p id="challenge-text" class="text-xs md:text-sm font-bold leading-relaxed">
-                        「120円のコーラを8本と、140円のコーヒーを4本。あわせて売上はいくらでしょう？」
-                    </p>
-                </div>
-
-                <!-- Input keypad form -->
-                <div class="flex flex-col gap-2">
-                    <div class="flex gap-2">
-                        <input type="number" id="answer-input" class="flex-grow px-3 py-2 rounded-xl text-slate-900 text-sm font-black text-center focus:ring-4 focus:ring-violet-300 focus:outline-none placeholder-slate-400" placeholder="答えを入力（半角）">
-                        <span class="text-sm self-center font-black">円</span>
-                        <button onclick="submitAnswer()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-xl text-xs font-black shadow-lg transition-all flex items-center gap-1 shrink-0">
-                            確定！
-                        </button>
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-blue-500 text-lg"></i>
+                        <h2 class="text-lg font-black tracking-tight">うりあげ詳細 (かけざん表)</h2>
                     </div>
-
-                    <div id="challenge-hint" class="text-[10px] text-violet-200 flex items-start gap-1 bg-violet-700/30 p-2 rounded-lg border border-violet-500/20">
-                        <span>💡</span>
-                        <span>ヒント：自動販売機を押してためしてみよう！</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MULTIPLICATION REPORT MATRIX (Scroll-free Table) -->
-            <div class="bg-slate-900 rounded-3xl p-5 shadow-xl border border-slate-800">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
-                        <span class="text-base">📊</span> うりあげ詳細（かけざん表）
-                    </h2>
-                    <button onclick="resetAll()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg transition-colors font-bold">
-                        売上をクリア
+                    <button onclick="resetAll()" class="text-xs text-rose-500 font-bold hover:bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200 transition-all flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> ぜんぶクリア
                     </button>
                 </div>
 
-                <!-- Fully visible table container (no overflow restrictions) -->
-                <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
+                <!-- TABLE (Scroll-free as requested, fully responsive and auto-height) -->
+                <div class="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50/50">
                     <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-950 text-slate-400 font-bold">
-                            <tr class="border-b border-slate-800">
-                                <th class="p-2">商品（単価）</th>
-                                <th class="p-2 text-center">本数</th>
-                                <th class="p-2 text-right">掛け算式</th>
-                                <th class="p-2 text-right pr-4">売上金額</th>
+                        <thead class="bg-slate-100 text-slate-600 font-bold">
+                            <tr>
+                                <th class="p-3">のみもの</th>
+                                <th class="p-3">おねだん</th>
+                                <th class="p-3 text-center">本数</th>
+                                <th class="p-3 text-right">かけざんの式 ＝ うりあげ</th>
                             </tr>
                         </thead>
-                        <tbody id="sales-table-body" class="divide-y divide-slate-800/50 font-bold">
-                            <tr id="empty-table-prompt">
-                                <td colspan="4" class="p-4 text-center text-slate-500 italic text-[11px]">
-                                    自販機のボタンを押すると、自動でかけ算式が作られます！
+                        <tbody id="sales-table-body">
+                            <!-- Populated dynamically -->
+                            <tr id="empty-row">
+                                <td colspan="4" class="p-6 text-center text-slate-400 italic">
+                                    まだ買われていないよ。100円を入れてジュースを買ってみよう！
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Aggregated Summary Card -->
-                <div class="bg-slate-950 rounded-2xl p-4 mt-3 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-2 shadow-inner">
-                    <div class="flex items-center gap-2">
-                        <span class="text-lg">💰</span>
-                        <span class="text-slate-400 text-xs">合計うりあげ（掛け算の総和）:</span>
+                <!-- INPUT FORM AND TOAST FEEDBACK -->
+                <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl p-5 text-white shadow-md flex flex-col gap-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-sm">💡 自分でうりあげを計算しよう！</h3>
+                            <p class="text-[10px] text-blue-100 mt-0.5">購入したジュース全体の合計金額はいくらになるかな？</p>
+                        </div>
+                        <div class="bg-indigo-900/40 px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wider text-yellow-300">
+                            ★計算にチャレンジ★
+                        </div>
                     </div>
-                    <span class="text-xl font-black text-emerald-400 tracking-wider">
-                        <span id="grand-total">????</span>円
-                    </span>
+
+                    <!-- Input & Action Area -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                        <div class="md:col-span-8 relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold font-mono text-lg">¥</span>
+                            <input id="free-answer-input" type="number" placeholder="いくらになる？" class="w-full pl-8 pr-4 py-3 rounded-2xl bg-white text-slate-900 font-extrabold text-xl font-mono focus:ring-4 focus:ring-yellow-400 focus:outline-none placeholder-slate-300 shadow-inner">
+                        </div>
+                        <button onclick="checkTotalAnswer()" class="md:col-span-4 py-3.5 px-4 bg-yellow-400 hover:bg-yellow-300 active:scale-95 transition-all text-indigo-950 font-black rounded-2xl text-sm shadow-md flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-circle-check"></i> 答え合わせ！
+                        </button>
+                    </div>
+
+                    <!-- Hint / Reveal Option -->
+                    <div class="flex justify-between items-center text-[11px] border-t border-white/20 pt-2.5">
+                        <span class="text-blue-100">※ 掛け算を使うとスピーディに計算できるよ！</span>
+                        <button onclick="revealAnswer()" class="text-yellow-200 font-bold hover:underline">答えを見る 👀</button>
+                    </div>
                 </div>
+
             </div>
 
-            <!-- PROPORTIONALITY DYNAMIC GRAPH (IMG_4021 Inspired) -->
-            <div class="bg-slate-900 rounded-3xl p-5 shadow-xl border border-slate-800">
-                <div class="flex flex-col gap-1 mb-3">
-                    <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
-                        <span class="text-base">📈</span> 比例（ひれい） y = ax の関係グラフ
-                    </h2>
-                    <p class="text-[10px] text-slate-400">本数がふえると売上も規則正しくふえていきます（直線になります）</p>
+            <!-- GRAPH CONTAINER (Proportion Chart) -->
+            <div class="bg-white rounded-3xl p-5 shadow-xl border border-slate-100 flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-emerald-500 text-lg"></i>
+                        <h2 class="text-sm font-black tracking-tight">本数とうりあげの比例（ひれい）グラフ</h2>
+                    </div>
+                    <!-- Selector to filter specific item on the graph -->
+                    <select id="graph-select" onchange="updateGraph()" class="text-xs bg-slate-100 text-slate-600 font-bold px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none">
+                        <option value="total">合計金額（総売上）</option>
+                    </select>
                 </div>
-
-                <div class="flex flex-wrap gap-1 mb-2.5" id="graph-filters">
-                    <button id="btn-graph-all" onclick="setGraphFilter('all')" class="px-2 py-0.5 bg-blue-600 text-white rounded text-[10px] font-bold transition-all shadow-sm">すべて</button>
-                    <button id="btn-graph-cola" onclick="setGraphFilter('cola')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold transition-all">コーラ</button>
-                    <button id="btn-graph-coffee" onclick="setGraphFilter('coffee')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold transition-all">コーヒー</button>
-                    <button id="btn-graph-tea" onclick="setGraphFilter('tea')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold transition-all">お茶</button>
-                    <button id="btn-graph-special" onclick="setGraphFilter('special')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold transition-all">その他</button>
+                <!-- Canvas Chart -->
+                <div class="relative bg-slate-50 rounded-2xl p-2 border border-slate-100 shadow-inner">
+                    <canvas id="proportion-canvas" class="w-full h-44 block"></canvas>
                 </div>
-
-                <div class="relative bg-slate-950 rounded-2xl border border-slate-800 p-2 overflow-hidden flex justify-center items-center">
-                    <canvas id="prop-graph" class="w-full aspect-[4/3] block" width="500" height="340"></canvas>
-                </div>
+                <p class="text-[10px] text-slate-400 leading-relaxed">
+                    💡 **比例のひみつ：** 本数が 2倍、3倍 になると、うりあげも 2倍、3倍 と「まっすぐ」増えていくよ。グラフのまっすぐな線のひみつを見つけてみてね！
+                </p>
             </div>
 
         </div>
+
     </main>
 
-    <!-- EDUCATIONAL MODAL POPUP -->
-    <div id="guide-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-            <div class="bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 px-6 py-4 flex items-center justify-between">
-                <h3 class="font-black text-sm md:text-base flex items-center gap-2">
-                    <span>📖</span> 自販機で学ぶ「かけ算と比例」のひみつ
-                </h3>
-                <button onclick="closeGuideModal()" class="text-xl font-bold bg-slate-950/20 hover:bg-slate-950/40 w-8 h-8 rounded-full flex items-center justify-center transition-colors">×</button>
-            </div>
-            
-            <div class="p-6 overflow-y-auto space-y-6 text-slate-300">
-                <div class="flex gap-4 items-start border-b border-slate-800 pb-4">
-                    <div class="bg-amber-500/15 text-amber-400 text-sm font-black w-7 h-7 rounded-full flex items-center justify-center shrink-0 border border-amber-500/30">1</div>
-                    <div>
-                        <h4 class="font-bold text-slate-100 text-xs md:text-sm">おなじ数を一気にまとめる「かけ算」</h4>
-                        <p class="text-[11px] md:text-xs mt-1 leading-relaxed text-slate-400">
-                            「120円を8回たし算する（120＋120＋120...）」のは大変ですが、かけ算を使えば<strong>「120円 × 8本 ＝ 960円」</strong>と一瞬で答えがわかります。
-                        </p>
-                    </div>
-                </div>
+    <!-- TOAST MESSAGE CONTAINER -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm pointer-events-none"></div>
 
-                <div class="flex gap-4 items-start border-b border-slate-800 pb-4">
-                    <div class="bg-emerald-500/15 text-emerald-400 text-sm font-black w-7 h-7 rounded-full flex items-center justify-center shrink-0 border border-emerald-500/30">2</div>
-                    <div>
-                        <h4 class="font-bold text-slate-100 text-xs md:text-sm">計算をスマートにする「くふう（分配法則）」</h4>
-                        <p class="text-[11px] md:text-xs mt-1 leading-relaxed text-slate-400">
-                            170円のソルティライチを「お兄ちゃんが3本、妹が7本」買ったとき、
-                            <br>
-                            ① 別々に計算： <span class="text-slate-200">170×3 (510円) ＋ 170×7 (1190円) ＝ 1700円</span>
-                            <br>
-                            ② <strong>本数を先に足して計算：</strong> <span class="text-emerald-400 font-bold">170 × (3 ＋ 7) ＝ 170 × 10 ＝ 1700円</span>
-                            <br>
-                            このように、同じ商品の場合は本数を先にまとめると、暗算でも解けるようになります！
-                        </p>
-                    </div>
-                </div>
-
-                <div class="flex gap-4 items-start">
-                    <div class="bg-sky-500/15 text-sky-400 text-sm font-black w-7 h-7 rounded-full flex items-center justify-center shrink-0 border border-sky-500/30">3</div>
-                    <div>
-                        <h4 class="font-bold text-slate-100 text-xs md:text-sm">比例（ひれい）ってなぁに？</h4>
-                        <p class="text-[11px] md:text-xs mt-1 leading-relaxed text-slate-400">
-                            ジュースの数が「2倍、3倍」になると、売上額もぴったり「2倍、3倍」になります。この規則的な関係を「比例（ひれい）」と言い、グラフに表すとゼロからきれいに伸びるまっすぐな一本の線になります。
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-slate-950 px-6 py-4 text-center border-t border-slate-800">
-                <button onclick="closeGuideModal()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-6 py-2 rounded-xl transition-all">
-                    なるほど、バッチリ理解した！
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- TOAST POPUP NOTIFICATION -->
-    <div id="toast-message" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl border border-slate-800 z-50 flex items-center gap-3 transition-all duration-300 pointer-events-none opacity-0 translate-y-[20px]">
-        <span id="toast-icon" class="text-2xl">🎉</span>
-        <div>
-            <h4 id="toast-title" class="font-black text-xs">タイトル</h4>
-            <p id="toast-body" class="text-[10px] text-slate-400 mt-0.5">メッセージ</p>
-        </div>
-    </div>
-
-    <!-- Canvas overlay for celebration confetti particles -->
-    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
-
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // Web Audio API helper for high fidelity arcade sound effects
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        // Set up Audio Context dynamically on first user click to bypass browser restrictions
         let audioCtx = null;
-        let isMuted = false;
-
         function initAudio() {
             if (!audioCtx) {
-                audioCtx = new AudioCtx();
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
         }
+        document.body.addEventListener('click', initAudio, { once: true });
 
-        function playSound(type) {
-            if (isMuted) return;
-            initAudio();
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            const now = audioCtx.currentTime;
-
-            if (type === 'button') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(1000, now);
-                gain.gain.setValueAtTime(0.08, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-                osc.start(now);
-                osc.stop(now + 0.08);
-            } else if (type === 'dispense') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(220, now);
-                osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
-                gain.gain.setValueAtTime(0.25, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now);
-                osc.stop(now + 0.3);
-
-                setTimeout(() => {
-                    if (isMuted) return;
-                    const osc2 = audioCtx.createOscillator();
-                    const gain2 = audioCtx.createGain();
-                    osc2.connect(gain2);
-                    gain2.connect(audioCtx.destination);
-                    osc2.type = 'triangle';
-                    osc2.frequency.setValueAtTime(140, audioCtx.currentTime);
-                    osc2.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.15);
-                    gain2.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                    gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-                    osc2.start();
-                    osc2.stop(audioCtx.currentTime + 0.2);
-                }, 100);
-            } else if (type === 'coin') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(1500, now);
-                osc.frequency.setValueAtTime(1800, now + 0.05);
-                gain.gain.setValueAtTime(0.12, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-                osc.start(now);
-                osc.stop(now + 0.2);
-            } else if (type === 'correct') {
-                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
-                notes.forEach((freq, index) => {
-                    setTimeout(() => {
-                        if (isMuted) return;
-                        const o = audioCtx.createOscillator();
-                        const g = audioCtx.createGain();
-                        o.connect(g);
-                        g.connect(audioCtx.destination);
-                        o.type = 'triangle';
-                        o.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                        g.gain.setValueAtTime(0.12, audioCtx.currentTime);
-                        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-                        o.start();
-                        o.stop(audioCtx.currentTime + 0.25);
-                    }, index * 80);
-                });
-            } else if (type === 'wrong') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(180, now);
-                osc.frequency.linearRampToValueAtTime(100, now + 0.35);
-                gain.gain.setValueAtTime(0.15, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-                osc.start(now);
-                osc.stop(now + 0.35);
-            }
-        }
-    </script>
-
-    <script>
         // Comprehensive 30-Beverage Database modeled after the real vending machine image (IMG_4022.jpg)
-        // Includes X and Y percentages to crop individual bottles straight from "IMG_4022.jpg"
-        // Also contains local path with fallback if IMG_4022.jpg or individual images are not found.
         const productsDatabase = [
-            // Row 1 (Top, 10 items)
-            { id: 'p1', name: 'ポカリスエット', price: 170, row: 1, type: 'special', color: '#1e3a8a', pop: '熱中症対策', spriteX: 9.5, spriteY: 11, imgUrl: 'IMG_4047.JPG' },
-            { id: 'p2', name: '100%グレープ', price: 170, row: 1, type: 'special', color: '#581c87', pop: '贅沢果汁', spriteX: 18.2, spriteY: 11, imgUrl: 'IMG_4048.JPG' },
-            { id: 'p3', name: 'ゼロサイダー', price: 180, row: 1, type: 'special', color: '#0369a1', pop: 'カロリー0', spriteX: 27.2, spriteY: 11, imgUrl: 'IMG_4049.JPG' },
-            { id: 'p4', name: 'やかん麦茶', price: 140, row: 1, type: 'tea', color: '#c2410c', pop: '香ばしい', spriteX: 36.2, spriteY: 11, imgUrl: 'IMG_4050.JPG' },
-            { id: 'p5', name: 'やかん麦茶(大)', price: 140, row: 1, type: 'tea', color: '#c2410c', pop: 'カフェイン0', spriteX: 45.2, spriteY: 11, imgUrl: 'IMG_4050.JPG' },
-            { id: 'p6', name: 'ボス ブラック', price: 180, row: 1, type: 'coffee', color: '#18181b', pop: 'THE BLACK', spriteX: 54.2, spriteY: 11, imgUrl: 'IMG_4051.JPG' },
-            { id: 'p7', name: 'ボス ラテ', price: 180, row: 1, type: 'coffee', color: '#d97706', pop: 'THE LATTE', spriteX: 63.2, spriteY: 11, imgUrl: 'IMG_4052.JPG' },
-            { id: 'p8', name: 'レモン微炭酸', price: 120, row: 1, type: 'special', color: '#0284c7', pop: '刺激強め', spriteX: 72.2, spriteY: 11, imgUrl: 'IMG_4053.JPG' },
-            { id: 'p9', name: 'レモンティー', price: 140, row: 1, type: 'tea', color: '#eab308', pop: '甘さすっきり', spriteX: 81.2, spriteY: 11, imgUrl: 'IMG_4054.JPG' },
-            { id: 'p10', name: 'コカコーラ缶', price: 120, row: 1, type: 'cola', color: '#dc2626', pop: 'Coke ON', spriteX: 90.5, spriteY: 11, imgUrl: 'IMG_4055.JPG' },
+            // Row 1 (Upper, 10 items)
+            { id: 'p1', name: 'ポカリスエット', price: 170, row: 1, type: 'special', color: '#1e3a8a', pop: '熱中症対策', spriteX: 9.5, spriteY: 11, imgUrl: 'images/p1.png' },
+            { id: 'p2', name: '100%グレープ', price: 170, row: 1, type: 'special', color: '#581c87', pop: '贅沢果汁', spriteX: 18.2, spriteY: 11, imgUrl: 'images/p2.png' },
+            { id: 'p3', name: 'ゼロサイダー', price: 180, row: 1, type: 'special', color: '#0369a1', pop: 'カロリー0', spriteX: 27.2, spriteY: 11, imgUrl: 'images/p3.png' },
+            { id: 'p4', name: 'やかん麦茶', price: 140, row: 1, type: 'tea', color: '#c2410c', pop: '香ばしい', spriteX: 36.2, spriteY: 11, imgUrl: 'images/p4.png' },
+            { id: 'p5', name: 'やかん麦茶(大)', price: 140, row: 1, type: 'tea', color: '#c2410c', pop: 'カフェイン0', spriteX: 45.2, spriteY: 11, imgUrl: 'images/p5.png' },
+            { id: 'p6', name: 'ボス ブラック', price: 180, row: 1, type: 'coffee', color: '#18181b', pop: 'THE BLACK', spriteX: 54.2, spriteY: 11, imgUrl: 'images/p6.png' },
+            { id: 'p7', name: 'ボス ラテ', price: 180, row: 1, type: 'coffee', color: '#d97706', pop: 'THE LATTE', spriteX: 63.2, spriteY: 11, imgUrl: 'images/p7.png' },
+            { id: 'p8', name: 'レモン微炭酸', price: 120, row: 1, type: 'special', color: '#0284c7', pop: '刺激強め', spriteX: 72.2, spriteY: 11, imgUrl: 'images/p8.png' },
+            { id: 'p9', name: 'レモンティー', price: 140, row: 1, type: 'tea', color: '#eab308', pop: '甘さすっきり', spriteX: 81.2, spriteY: 11, imgUrl: 'images/p9.png' },
+            { id: 'p10', name: 'コカコーラ缶', price: 120, row: 1, type: 'cola', color: '#dc2626', pop: 'Coke ON', spriteX: 90.5, spriteY: 11, imgUrl: 'images/p10.png' },
 
             // Row 2 (Middle, 10 items)
             { id: 'p11', name: 'ソルティライチ', price: 170, row: 2, type: 'special', color: '#0284c7', pop: '水分補給', spriteX: 9.5, spriteY: 51, imgUrl: 'images/p11.png' },
@@ -521,686 +331,703 @@
             { id: 'p30', name: 'ワンダアイス', price: 130, row: 3, type: 'coffee', color: '#0284c7', pop: '甘さすっきり', spriteX: 90.5, spriteY: 90.5, imgUrl: 'images/p30.png' }
         ];
 
-        // Active Quantities Mapping State (Reactive)
-        let activeQuantities = {};
-        productsDatabase.forEach(p => {
-            activeQuantities[p.id] = 0;
-        });
+        // Quantities currently bought (ID mapping)
+        const activeQuantities = {};
+        productsDatabase.forEach(p => activeQuantities[p.id] = 0);
 
         let currentMode = 'free'; // 'free' or 'challenge'
-        let graphFilter = 'all';  // Category filter
         let currentChallenge = null;
         let challengeLevel = 1;
+        let isFreeAnswered = false; // Whether user completed calculations manually
+        let hasRealImage = false; // Check for IMG_4022.jpg dynamically
+        let currentBalance = 0; // Simulated coin slot balance
 
-        // Answers state for Free Play Mode
-        let isFreeAnswered = false; // Whether the user has successfully calculated the current total
-        let lastCalculatedTotal = 0; // Cached total for checking answers
+        // Check if IMG_4022.jpg exists in the directory
+        const checkRealImage = new Image();
+        checkRealImage.src = 'IMG_4022.jpg';
+        checkRealImage.onload = function() {
+            hasRealImage = true;
+            initVendingMachine();
+        };
+        checkRealImage.onerror = function() {
+            hasRealImage = false;
+            initVendingMachine();
+        };
 
-        // Dynamic Image checking state to see if IMG_4022.jpg is present in directory
-        let hasRealImage = false;
-    </script>
+        // Synthesize retro/vending arcade sound effects without external file dependencies
+        function playSound(type) {
+            initAudio();
+            if (!audioCtx) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
 
-    <script>
-        // Check if IMG_4022.jpg is available to use for CSS Sprites
-        function checkRealImageAvailability() {
-            const imgChecker = new Image();
-            imgChecker.src = 'IMG_4022.jpg';
-            imgChecker.onload = function() {
-                hasRealImage = true;
-                console.log("IMG_4022.jpg found! Enabling hyper-realistic crop mode.");
-                generateShowcases(); // Redraw with actual crop coordinates
-            };
-            imgChecker.onerror = function() {
-                hasRealImage = false;
-                console.log("Using high-quality fallback photographs instead.");
-                generateShowcases();
-            };
-        }
+            if (type === 'button') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                gain.gain.setValueAtTime(0.06, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'dispense') {
+                // Double clank sounds for physical drop
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
 
-        // Construct the Vending Machine visually
-        function generateShowcases() {
-            for (let r = 1; r <= 3; r++) {
-                const rowContainer = document.getElementById(`showcase-row-${r}`);
-                rowContainer.innerHTML = '';
-
-                const rowItems = productsDatabase.filter(p => p.row === r);
-                rowItems.forEach((p, idx) => {
-                    const itemSlot = document.createElement('div');
-                    itemSlot.className = "flex flex-col items-center justify-between bg-slate-950 p-1 rounded-md border border-slate-800 relative shadow-inner h-[125px]";
-                    
-                    // Render either the cropped slice of IMG_4022.jpg or a standard Unsplash image
-                    let imageDiv = "";
-                    if (hasRealImage) {
-                        imageDiv = `
-                            <div class="relative w-9 h-[60px] rounded-md overflow-hidden shadow-lg border border-slate-700/50 cursor-pointer transform hover:scale-110 transition-all duration-200" 
-                                 onclick="buyDrink('${p.id}')"
-                                 style="background-image: url('IMG_4022.jpg'); background-size: 1150% 430%; background-position: ${p.spriteX}% ${p.spriteY}%; background-repeat: no-repeat;">
-                            </div>
-                        `;
-                    } else {
-                        const fallbackPlaceholder = `https://placehold.co/120x180/${p.color.replace('#','')}/ffffff?text=${encodeURIComponent(p.name)}`;
-                        imageDiv = `
-                            <div class="relative w-9 h-[60px] rounded-md overflow-hidden shadow-lg border border-slate-700/50 bg-slate-900 group transform hover:scale-110 transition-all duration-200 cursor-pointer" onclick="buyDrink('${p.id}')">
-                                <img src="${p.imgUrl}" alt="${p.name}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${fallbackPlaceholder}';">
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80 pointer-events-none"></div>
-                            </div>
-                        `;
-                    }
-
-                    // Render slots with labels and buttons
-                    itemSlot.innerHTML = `
-                        <span class="absolute top-[2px] left-[2px] bg-red-600/95 text-white font-bold text-[5px] px-0.5 rounded tracking-tighter leading-none z-10">${p.pop}</span>
-                        
-                        <div class="flex-grow flex items-center justify-center relative mt-2">
-                            ${imageDiv}
-                        </div>
-
-                        <div class="bg-black text-[7px] text-orange-400 font-mono px-0.5 rounded leading-none w-full text-center tracking-wide border border-zinc-800 mt-1">
-                            ¥${p.price}
-                        </div>
-
-                        <button onclick="buyDrink('${p.id}')" class="w-full py-[2px] mt-0.5 rounded bg-zinc-800 hover:bg-zinc-700 border-b border-zinc-900 active:border-b-0 flex items-center justify-center gap-0.5">
-                            <span class="w-[4px] h-[4px] rounded-full bg-emerald-400"></span>
-                            <span class="text-[6px] text-zinc-300 font-black">つめたい</span>
-                        </button>
-                    `;
-                    rowContainer.appendChild(itemSlot);
+                setTimeout(() => {
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.type = 'triangle';
+                    osc2.frequency.setValueAtTime(120, audioCtx.currentTime);
+                    gain2.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    osc2.start();
+                    osc2.stop(audioCtx.currentTime + 0.2);
+                }, 100);
+            } else if (type === 'coin') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, now);
+                osc.frequency.setValueAtTime(1500, now + 0.04);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'correct') {
+                // Success Arpeggio
+                const scale = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                scale.forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.type = 'triangle';
+                    o.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.07);
+                    g.gain.setValueAtTime(0.08, audioCtx.currentTime + idx * 0.07);
+                    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + idx * 0.07 + 0.2);
+                    o.start(audioCtx.currentTime + idx * 0.07);
+                    o.stop(audioCtx.currentTime + idx * 0.07 + 0.2);
                 });
+            } else if (type === 'wrong') {
+                // Buzz Sound
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.3);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
             }
         }
-    </script>
 
-    <script>
-        // Main buy simulator function
+        // Build the Vending Machine interface inside the container divs
+        function initVendingMachine() {
+            const rowContainers = {
+                1: document.getElementById('row-1-container'),
+                2: document.getElementById('row-2-container'),
+                3: document.getElementById('row-3-container')
+            };
+
+            // Clear first
+            rowContainers[1].innerHTML = '';
+            rowContainers[2].innerHTML = '';
+            rowContainers[3].innerHTML = '';
+
+            // Selector setup for Graph filters
+            const selectGraph = document.getElementById('graph-select');
+            selectGraph.innerHTML = '<option value="total">合計金額（総売上）</option>';
+
+            productsDatabase.forEach(product => {
+                const container = rowContainers[product.row];
+                
+                // Outer packaging shell
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex flex-col items-center select-none cursor-pointer group';
+                wrapper.setAttribute('onclick', `buyDrink('${product.id}')`);
+
+                // Sprite background / image styles
+                let visualHtml = '';
+                if (hasRealImage) {
+                    // Custom CSS Sprite position referencing IMG_4022.jpg
+                    visualHtml = `
+                        <div class="w-7 h-16 rounded-md shadow border border-stone-700/60 transition-transform group-hover:scale-105" 
+                             style="background: url('IMG_4022.jpg') ${product.spriteX}% ${product.spriteY}% / 1100% 1100% no-repeat;">
+                        </div>`;
+                } else {
+                    // Beautiful high-quality fallbacks from Unsplash
+                    visualHtml = `
+                        <div class="w-7 h-16 rounded-md bg-zinc-900 border border-stone-800 shadow relative transition-transform group-hover:scale-105 flex items-end overflow-hidden" style="background-color: ${product.color}">
+                            <img src="${product.imgUrl}" alt="${product.name}" class="w-full h-full object-cover opacity-80" onerror="this.style.display='none'">
+                            <span class="absolute top-0.5 left-0.5 right-0.5 bg-black/60 text-[5px] text-white py-0.5 px-0.5 rounded scale-75 text-center leading-none truncate">${product.pop}</span>
+                        </div>`;
+                }
+
+                // Button & Badges below can
+                wrapper.innerHTML = `
+                    ${visualHtml}
+                    <!-- Blue 'つめた〜い' tag -->
+                    <div class="mt-1 w-full bg-blue-600 border border-blue-500 rounded py-0.5 text-center shadow-sm">
+                        <span class="text-[5px] text-blue-100 block scale-90 leading-none font-bold">つめた〜い</span>
+                    </div>
+                    <!-- Red Digital Price Tag -->
+                    <div class="text-[6px] font-mono text-center text-red-500 font-extrabold leading-tight mt-0.5 bg-black/80 rounded px-0.5 border border-zinc-700">
+                        ¥${product.price}
+                    </div>
+                    <!-- Physical Vending Button -->
+                    <button id="btn-${product.id}" class="mt-1 w-5 h-2.5 rounded-full bg-zinc-600 border border-zinc-700 hover:bg-zinc-500 active:bg-zinc-800 transition-all shadow shadow-black flex items-center justify-center">
+                        <span class="w-1.5 h-1.5 rounded-full bg-zinc-800 border border-zinc-700"></span>
+                    </button>
+                `;
+                container.appendChild(wrapper);
+
+                // Dynamically populate drop-down selector
+                const opt = document.createElement('option');
+                opt.value = product.id;
+                opt.textContent = product.name;
+                selectGraph.appendChild(opt);
+            });
+
+            updateButtonGlows();
+            updateTotals();
+            updateGraph();
+        }
+
+        // Turn buy buttons green/yellow if the current balance is sufficient
+        function updateButtonGlows() {
+            productsDatabase.forEach(product => {
+                const btn = document.getElementById(`btn-${product.id}`);
+                if (btn) {
+                    if (currentBalance >= product.price) {
+                        btn.className = 'mt-1 w-5 h-2.5 rounded-full bg-yellow-400 border border-yellow-300 transition-all shadow shadow-yellow-500/50 flex items-center justify-center active-buy-btn';
+                    } else {
+                        btn.className = 'mt-1 w-5 h-2.5 rounded-full bg-zinc-600 border border-zinc-700 hover:bg-zinc-500 active:bg-zinc-800 transition-all shadow shadow-black flex items-center justify-center';
+                    }
+                }
+            });
+        }
+
+        // Coin insertion
+        function insertCoin() {
+            playSound('coin');
+            currentBalance += 100;
+            document.getElementById('machine-display').textContent = currentBalance;
+            updateButtonGlows();
+            showToast('チャリン！', '100円が入りました。残高：¥' + currentBalance, '🪙', 'blue');
+        }
+
+        // Refund/Change Lever Clicked
+        function refundCoins() {
+            if (currentBalance === 0) {
+                showToast('おつり', 'お金が入っていません。', '💡', 'zinc');
+                return;
+            }
+            playSound('coin');
+            showToast('おつり ↩', `${currentBalance}円のおつりが出てきたよ！`, '🪙', 'yellow');
+            currentBalance = 0;
+            document.getElementById('machine-display').textContent = currentBalance;
+            updateButtonGlows();
+        }
+
+        // Simulate physical drop of selected drink
         function buyDrink(id) {
             playSound('button');
-            const target = productsDatabase.find(p => p.id === id);
-            
-            if (activeQuantities[id] >= 12) {
-                showToast('制限オーバー！', `${target.name}はこれ以上入らないよ。グラフを確認してみよう！`, '⚠️');
+            const product = productsDatabase.find(p => p.id === id);
+
+            if (currentBalance < product.price) {
+                playSound('wrong');
+                showToast('お金がたりないよ！', `${product.name}を買うには ¥${product.price} 必要です。あと ¥${product.price - currentBalance} いれてね！`, '⚠️', 'rose');
+                
+                // Animate Display to flash red
+                const screen = document.getElementById('display-container');
+                screen.classList.add('bg-red-950', 'text-red-500');
+                screen.classList.remove('text-emerald-400');
+                setTimeout(() => {
+                    screen.classList.remove('bg-red-950', 'text-red-500');
+                    screen.classList.add('text-emerald-400');
+                }, 600);
                 return;
             }
 
+            // Limit single beverage inventory in simulator to 12
+            if (activeQuantities[id] >= 12) {
+                showToast('いっぱいです！', `売上グラフが見えにくくなるため、同じジュースは12本までにしてね！`, '⚠️', 'amber');
+                return;
+            }
+
+            // Deduct from Balance & dispense
+            currentBalance -= product.price;
+            document.getElementById('machine-display').textContent = currentBalance;
             activeQuantities[id]++;
-            isFreeAnswered = false;
+            isFreeAnswered = false; // Flag to reset answer validation on subsequent buy
             document.getElementById('free-answer-input').value = '';
 
+            updateButtonGlows();
             updateTotals();
-            spawnCanInDispenser(id);
+            updateGraph();
+            spawnVisualDrink(product);
             playSound('dispense');
-
-            // Blink coin display momentarily
-            const display = document.getElementById('machine-display');
-            display.textContent = '????';
-            display.classList.add('text-amber-400');
-            setTimeout(() => {
-                display.classList.remove('text-amber-400');
-                if (isFreeAnswered) {
-                    display.textContent = String(lastCalculatedTotal).padStart(4, '0');
-                } else {
-                    display.textContent = '????';
-                }
-            }, 700);
         }
 
-        // Insert mock coin callback
-        function insertCoin() {
-            playSound('coin');
-            const display = document.getElementById('machine-display');
-            display.textContent = 'COIN';
-            setTimeout(() => {
-                if (isFreeAnswered) {
-                    display.textContent = String(lastCalculatedTotal).padStart(4, '0');
-                } else {
-                    display.textContent = '????';
-                }
-            }, 600);
-            showToast('チャリン！', '100円玉が入りました（ボタンを押して買ってみよう）', '🪙');
-        }
-
-        // Physical drop simulator (Creates cropped or dynamic cans)
-        function spawnCanInDispenser(id) {
-            const placeholder = document.getElementById('dispense-placeholder');
-            placeholder.classList.add('hidden');
-
-            const item = productsDatabase.find(p => p.id === id);
-            const can = document.createElement('div');
-            can.className = 'dispensed-can flex-shrink-0 w-11 h-16 rounded-lg relative flex flex-col items-center justify-between text-[8px] text-white font-bold shadow-md cursor-pointer select-none overflow-hidden border border-zinc-700 bg-slate-900';
-            
-            if (hasRealImage) {
-                can.innerHTML = `
-                    <div class="absolute inset-0 w-full h-full"
-                         style="background-image: url('IMG_4022.jpg'); background-size: 1150% 430%; background-position: ${item.spriteX}% ${item.spriteY}%; background-repeat: no-repeat;">
-                    </div>
-                    <div class="relative z-10 w-full px-0.5 text-center bg-black/40 text-[6px] font-bold leading-tight truncate">${item.name.substring(0,3)}</div>
-                    <div class="relative z-10 w-full text-center pb-0.5 text-[7px] text-emerald-300 font-mono">${item.price}円</div>
-                `;
-            } else {
-                const fallbackPlaceholder = `https://placehold.co/120x180/${item.color.replace('#','')}/ffffff?text=${encodeURIComponent(item.name)}`;
-                can.innerHTML = `
-                    <div class="absolute inset-0 w-full h-full">
-                        <img src="${item.imgUrl}" alt="${item.name}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${fallbackPlaceholder}';">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                    </div>
-                    <div class="relative z-10 w-full px-0.5 text-center bg-black/40 text-[6px] font-bold leading-tight truncate">${item.name.substring(0,3)}</div>
-                    <div class="relative z-10 w-full text-center pb-0.5 text-[7px] text-emerald-300 font-mono">${item.price}円</div>
-                `;
-            }
-
-            can.onclick = (e) => {
-                e.stopPropagation();
-                can.style.transform = 'translateY(-30px) scale(0)';
-                can.style.opacity = '0';
-                can.style.transition = 'all 0.3s ease-out';
-                playSound('button');
-                setTimeout(() => {
-                    can.remove();
-                    activeQuantities[id] = Math.max(0, activeQuantities[id] - 1);
-                    updateTotals();
-                    checkChamberStatus();
-                }, 300);
-            };
-
-            document.getElementById('dispense-chamber').appendChild(can);
-
-            const collect = document.getElementById('collect-btn');
-            collect.disabled = false;
-            collect.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-
-        function checkChamberStatus() {
+        // Generate fallen physics style drink cans in dispenser slot
+        function spawnVisualDrink(product) {
             const chamber = document.getElementById('dispense-chamber');
             const placeholder = document.getElementById('dispense-placeholder');
-            const collect = document.getElementById('collect-btn');
+            if (placeholder) placeholder.remove();
 
-            if (chamber.children.length <= 1) { 
-                placeholder.classList.remove('hidden');
-                collect.disabled = true;
-                collect.classList.add('opacity-50', 'cursor-not-allowed');
+            // Enable collector button
+            const collectBtn = document.getElementById('collect-btn');
+            collectBtn.disabled = false;
+            collectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            const item = document.createElement('div');
+            item.className = 'w-6 h-12 rounded border border-black/40 shadow-md transform rotate-12 flex-shrink-0 animate-bounce relative overflow-hidden';
+            item.style.backgroundColor = product.color;
+
+            if (hasRealImage) {
+                item.style.backgroundImage = "url('IMG_4022.jpg')";
+                item.style.backgroundPosition = `${product.spriteX}% ${product.spriteY}%`;
+                item.style.backgroundSize = '1100% 1100%';
+            } else {
+                item.innerHTML = `
+                    <img src="${product.imgUrl}" alt="${product.name}" class="w-full h-full object-cover pointer-events-none" onerror="this.style.display='none'">
+                `;
             }
+
+            chamber.appendChild(item);
         }
 
-        function clearDispenser() {
-            playSound('dispense');
+        // Remove bought cans from dispenser chamber
+        function collectDrinks() {
+            playSound('button');
             const chamber = document.getElementById('dispense-chamber');
             chamber.innerHTML = '<span id="dispense-placeholder" class="text-zinc-600 text-[10px] font-bold italic select-none animate-pulse">ジュースがここに落ちてくるよ！</span>';
             
-            const collect = document.getElementById('collect-btn');
-            collect.disabled = true;
-            collect.classList.add('opacity-50', 'cursor-not-allowed');
+            const collectBtn = document.getElementById('collect-btn');
+            collectBtn.disabled = true;
+            collectBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
-            showToast('ゴトゴト！', '冷たいうちにおいしくいただきましょう！算数の計算もできたかな？', '🥤');
+            showToast('お買い上げ！', '買ったジュースを取り出したよ！バッグにいれよう！', '🎒', 'emerald');
         }
 
-        function calculateTotalSales() {
-            return productsDatabase.reduce((acc, curr) => acc + (curr.price * activeQuantities[curr.id]), 0);
-        }
-
+        // Calculate total sales and individual lines
         function updateTotals() {
-            const tableBody = document.getElementById('sales-table-body');
-            tableBody.innerHTML = '';
+            const tbody = document.getElementById('sales-table-body');
+            tbody.innerHTML = '';
 
-            let total = 0;
-            let activeItemsExist = false;
+            let hasItems = false;
+            let currentTotalSales = 0;
 
             productsDatabase.forEach(p => {
                 const qty = activeQuantities[p.id];
                 if (qty > 0) {
-                    activeItemsExist = true;
-                    const itemSum = p.price * qty;
-                    total += itemSum;
+                    hasItems = true;
+                    const lineSum = p.price * qty;
+                    currentTotalSales += lineSum;
 
-                    const displayFormula = `${p.price}円 × ${qty}`;
-                    const displaySum = (isFreeAnswered || currentMode === 'challenge') ? `${itemSum}円` : '？？？円';
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-slate-100 hover:bg-slate-50 transition-colors font-bold text-slate-700';
+                    
+                    // Display details. If the user hasn't successfully computed totals yet, mask actual values with questions.
+                    const calculationString = isFreeAnswered 
+                        ? `${p.price}円 × ${qty}本 ＝ <span class="text-emerald-600 font-extrabold">${lineSum}円</span>`
+                        : `${p.price}円 × ${qty}本 ＝ <span class="text-slate-400 bg-slate-200 px-1.5 py-0.5 rounded">？ ？ ？</span>`;
 
-                    const row = document.createElement('tr');
-                    row.className = 'hover:bg-slate-800/40 transition-colors text-slate-300';
-                    row.innerHTML = `
-                        <td class="p-2 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${p.color}"></span>
+                    tr.innerHTML = `
+                        <td class="p-3 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${p.color}"></span>
                             ${p.name}
                         </td>
-                        <td class="p-2 text-center">
-                            <div class="inline-flex items-center gap-1">
-                                <button onclick="modifyQty('${p.id}', -1)" class="w-4 h-4 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded flex items-center justify-center font-bold text-[10px]">-</button>
-                                <span class="w-4 text-center font-mono text-slate-100">${qty}</span>
-                                <button onclick="modifyQty('${p.id}', 1)" class="w-4 h-4 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded flex items-center justify-center font-bold text-[10px]">+</button>
-                            </div>
-                        </td>
-                        <td class="p-2 text-right font-mono text-slate-400">${displayFormula}</td>
-                        <td class="p-2 text-right font-mono text-emerald-400 pr-4">${displaySum}</td>
+                        <td class="p-3 font-mono">¥${p.price}</td>
+                        <td class="p-3 text-center font-mono bg-blue-50/50">${qty}本</td>
+                        <td class="p-3 text-right font-mono">${calculationString}</td>
                     `;
-                    tableBody.appendChild(row);
-                }
-            });
-
-            lastCalculatedTotal = total;
-
-            if (!activeItemsExist) {
-                tableBody.innerHTML = `
-                    <tr id="empty-table-prompt">
-                        <td colspan="4" class="p-4 text-center text-slate-500 italic text-[11px]">
-                            自販機のボタンを押すと、自動でかけ算式が作られます！
-                        </td>
-                    </tr>
-                `;
-            }
-
-            const grandTotalLabel = document.getElementById('grand-total');
-            const machineDisplayLabel = document.getElementById('machine-display');
-
-            if (isFreeAnswered || total === 0 || currentMode === 'challenge') {
-                grandTotalLabel.textContent = total;
-                machineDisplayLabel.textContent = String(total).padStart(4, '0');
-            } else {
-                grandTotalLabel.textContent = '????';
-                machineDisplayLabel.textContent = '????';
-            }
-
-            drawGraph();
-        }
-
-        // Free Play Answer Check Function
-        function checkFreeAnswer() {
-            const inputVal = parseInt(document.getElementById('free-answer-input').value);
-            if (isNaN(inputVal)) {
-                showToast('入力エラー', '数字を入力してね！', '✏️');
-                return;
-            }
-
-            if (lastCalculatedTotal === 0) {
-                showToast('おかいものしよう！', 'まずは自販機でジュースを買ってから計算してね。', '🍹');
-                return;
-            }
-
-            if (inputVal === lastCalculatedTotal) {
-                isFreeAnswered = true;
-                playSound('correct'); 
-                triggerConfetti(); 
-                updateTotals(); 
-                showToast(`当たり！ 大正解！`, `合計はぴったり ${lastCalculatedTotal}円 です！お見事！`, '🎉');
-            } else {
-                playSound('wrong'); 
-                showToast('ざんねん！ちがうよ', 'もう一度計算しなおしてみよう。あきらめないで！', '❌');
-            }
-        }
-
-        function revealFreeAnswer() {
-            if (lastCalculatedTotal === 0) {
-                showToast('ヒント', 'まずはジュースを何本か買してみてね。', '💡');
-                return;
-            }
-            isFreeAnswered = true;
-            playSound('button');
-            updateTotals();
-            showToast('答えを表示しました', `うりあげ合計は ${lastCalculatedTotal}円 です。式を確認して納得してみよう！`, '💡');
-        }
-
-        function modifyQty(id, delta) {
-            playSound('button');
-            const targetQty = activeQuantities[id] + delta;
-            if (targetQty < 0) return;
-            if (targetQty > 12) {
-                showToast('制限オーバー', '同じジュースは1度に12本までしか選べないよ。', '⚠️');
-                return;
-            }
-
-            activeQuantities[id] = targetQty;
-            isFreeAnswered = false;
-            document.getElementById('free-answer-input').value = '';
-            
-            updateTotals();
-
-            const chamber = document.getElementById('dispense-chamber');
-            chamber.innerHTML = '<span id="dispense-placeholder" class="text-zinc-600 text-[10px] font-bold italic select-none animate-pulse">ジュースがここに落ちてくるよ！</span>';
-            
-            let hasItems = false;
-            productsDatabase.forEach(p => {
-                for (let i = 0; i < activeQuantities[p.id]; i++) {
-                    spawnCanInDispenser(p.id);
-                    hasItems = true;
+                    tbody.appendChild(tr);
                 }
             });
 
             if (!hasItems) {
-                checkChamberStatus();
+                tbody.innerHTML = `
+                    <tr id="empty-row">
+                        <td colspan="4" class="p-6 text-center text-slate-400 italic">
+                            まだ買われていないよ。100円を入れてジュースを買ってみよう！
+                        </td>
+                    </tr>
+                `;
             }
         }
 
-        function resetAll() {
-            playSound('button');
+        // Check manual answer calculations submitted by user
+        function checkTotalAnswer() {
+            let actualTotalSales = 0;
             productsDatabase.forEach(p => {
-                activeQuantities[p.id] = 0;
-            });
-            const chamber = document.getElementById('dispense-chamber');
-            chamber.innerHTML = '<span id="dispense-placeholder" class="text-zinc-600 text-[10px] font-bold italic select-none animate-pulse">ジュースがここに落ちてくるよ！</span>';
-            
-            const collect = document.getElementById('collect-btn');
-            collect.disabled = true;
-            collect.classList.add('opacity-50', 'cursor-not-allowed');
-
-            isFreeAnswered = false;
-            document.getElementById('free-answer-input').value = '';
-
-            updateTotals();
-        }
-    </script>
-
-    <script>
-        function setGraphFilter(filter) {
-            playSound('button');
-            graphFilter = filter;
-
-            const filters = ['all', 'cola', 'coffee', 'tea', 'special'];
-            filters.forEach(f => {
-                const btn = document.getElementById(`btn-graph-${f}`);
-                if (f === filter) {
-                    btn.className = "px-2 py-0.5 bg-blue-600 text-white rounded text-[10px] font-bold transition-all shadow-sm";
-                } else {
-                    btn.className = "px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold transition-all";
-                }
+                actualTotalSales += (p.price * activeQuantities[p.id]);
             });
 
-            drawGraph();
-        }
-
-        function drawGraph() {
-            const canvas = document.getElementById('prop-graph');
-            const ctx = canvas.getContext('2d');
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            const padding = { top: 25, right: 30, bottom: 40, left: 55 };
-            const w = canvas.width - padding.left - padding.right;
-            const h = canvas.height - padding.top - padding.bottom;
-
-            const maxBottles = 12;
-            const maxVal = 2160; 
-
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 1;
-
-            // X scale lines
-            for (let i = 0; i <= maxBottles; i++) {
-                const x = padding.left + (i / maxBottles) * w;
-                ctx.beginPath();
-                ctx.moveTo(x, padding.top);
-                ctx.lineTo(x, padding.top + h);
-                ctx.stroke();
-
-                ctx.fillStyle = '#94a3b8';
-                ctx.font = '9px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(`${i}本`, x, padding.top + h + 14);
-            }
-
-            // Y scale lines
-            for (let i = 0; i <= maxVal; i += 360) {
-                const y = padding.top + h - (i / maxVal) * h;
-                ctx.beginPath();
-                ctx.moveTo(padding.left, y);
-                ctx.lineTo(padding.left + w, y);
-                ctx.stroke();
-
-                ctx.fillStyle = '#94a3b8';
-                ctx.font = '9px sans-serif';
-                ctx.textAlign = 'right';
-                ctx.fillText(`${i}円`, padding.left - 8, y + 3);
-            }
-
-            // Axes lines
-            ctx.strokeStyle = '#475569';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(padding.left, padding.top);
-            ctx.lineTo(padding.left, padding.top + h);
-            ctx.lineTo(padding.left + w, padding.top + h);
-            ctx.stroke();
-
-            // Label text headers
-            ctx.fillStyle = '#cbd5e1';
-            ctx.font = 'bold 9px "M PLUS Rounded 1c"';
-            ctx.textAlign = 'left';
-            ctx.fillText('売上金額 (円)', padding.left - 45, padding.top - 12);
-            ctx.textAlign = 'right';
-            ctx.fillText('買った本数', padding.left + w + 25, padding.top + h + 30);
-
-            // Draw lines for products
-            productsDatabase.forEach(p => {
-                if (graphFilter !== 'all' && graphFilter !== p.type) return;
-
-                const qty = activeQuantities[p.id];
-                const endYVal = p.price * maxBottles;
-                const endX = padding.left + w;
-                const endY = padding.top + h - (endYVal / maxVal) * h;
-
-                ctx.strokeStyle = p.color;
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(padding.left, padding.top + h); 
-                ctx.lineTo(endX, endY);
-                ctx.stroke();
-
-                if (qty > 0) {
-                    const cx = padding.left + (qty / maxBottles) * w;
-                    const cyVal = p.price * qty;
-                    const cy = padding.top + h - (cyVal / maxVal) * h;
-
-                    ctx.save();
-                    ctx.setLineDash([3, 3]);
-                    ctx.strokeStyle = '#64748b';
-                    ctx.beginPath();
-                    ctx.moveTo(cx, cy);
-                    ctx.lineTo(cx, padding.top + h);
-                    ctx.moveTo(cx, cy);
-                    ctx.lineTo(padding.left, cy);
-                    ctx.stroke();
-                    ctx.restore();
-
-                    ctx.fillStyle = p.color;
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = '9px sans-serif';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(` (${qty}本, ${cyVal}円)`, cx + 5, cy - 3);
-                }
-            });
-        }
-    </script>
-
-    <script>
-        function switchMode(mode) {
-            playSound('button');
-            currentMode = mode;
-
-            const tabFree = document.getElementById('tab-free');
-            const tabChallenge = document.getElementById('tab-challenge');
-            const challengePanel = document.getElementById('challenge-panel');
-            const freeCalcPanel = document.getElementById('free-calc-panel');
-
-            if (mode === 'free') {
-                tabFree.className = "flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center bg-blue-600 text-white shadow-md";
-                tabChallenge.className = "flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center text-slate-400 hover:bg-slate-800 hover:text-white";
-                challengePanel.classList.add('hidden');
-                freeCalcPanel.classList.remove('hidden');
-                showToast('自由計算モード', '好きなだけジュースを買って、自分の頭で売上を計算してみよう！', '🍹');
-            } else {
-                tabChallenge.className = "flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center bg-violet-600 text-white shadow-md";
-                tabFree.className = "flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center text-slate-400 hover:bg-slate-800 hover:text-white";
-                challengePanel.classList.remove('hidden');
-                freeCalcPanel.classList.add('hidden');
-                generateChallenge();
-                showToast('ミッション開始！', '売上の合計額を計算するミッションだよ！', '🏆');
-            }
-            updateTotals();
-        }
-
-        function generateChallenge() {
-            const drinkList = productsDatabase;
-            if (!drinkList || drinkList.length === 0) return;
-
-            const key1 = drinkList[Math.floor(Math.random() * drinkList.length)];
-            let key2 = drinkList[Math.floor(Math.random() * drinkList.length)];
-            while (key1.id === key2.id) {
-                key2 = drinkList[Math.floor(Math.random() * drinkList.length)];
-            }
-
-            const qty1 = Math.floor(Math.random() * 6) + 3; // 3 to 8
-            const qty2 = Math.floor(Math.random() * 4) + 2; // 2 to 5
-
-            const totalAns = (key1.price * qty1) + (key2.price * qty2);
-
-            currentChallenge = {
-                answer: totalAns,
-                text: `🏪 【うりあげミッション】<br>自販機で、<strong>${key1.price}円の${key1.name}が ${qty1}本</strong> と、<strong>${key2.price}円の${key2.name}が ${qty2}本</strong> 売れました。全体の売上金額は何円ですか？`,
-                hint: `ヒント：${key1.price} × ${qty1} と、${key2.price} × ${qty2} を計算して、答えをたし算してみよう！`
-            };
-
-            if (challengeLevel > 3 && Math.random() > 0.5) {
-                const samePriceDrink = drinkList[Math.floor(Math.random() * drinkList.length)];
-                const q1 = Math.floor(Math.random() * 4) + 2;
-                const q2 = 10 - q1; 
-                const sameAns = samePriceDrink.price * 10;
-
-                currentChallenge = {
-                    answer: sameAns,
-                    text: `💡 【計算のくふうミッション】<br><strong>${samePriceDrink.price}円の${samePriceDrink.name}</strong>が、午前中に <strong>${q1}本</strong>、午後に <strong>${q2}本</strong> 売れました。一日の売上は何円ですか？`,
-                    hint: `ヒント：同じ値段なので、本数をさきに足して ( ${q1} ＋ ${q2} ＝ 10本 ) で計算すると簡単だよ！`
-                };
-            }
-
-            document.getElementById('challenge-text').innerHTML = currentChallenge.text;
-            document.getElementById('challenge-hint').querySelector('span:last-child').textContent = currentChallenge.hint;
-            document.getElementById('challenge-level').textContent = challengeLevel;
-            document.getElementById('answer-input').value = '';
-        }
-
-        function submitAnswer() {
-            const val = parseInt(document.getElementById('answer-input').value);
-            if (isNaN(val)) {
-                showToast('入力エラー', '数字を入力してね！', '✏️');
+            if (actualTotalSales === 0) {
+                playSound('wrong');
+                showToast('おっと！', 'ジュースをまだ買っていないよ！自動販売機でお買い物してね。', '💡', 'zinc');
                 return;
             }
 
-            if (val === currentChallenge.answer) {
+            const inputVal = parseInt(document.getElementById('free-answer-input').value);
+            if (isNaN(inputVal)) {
+                playSound('wrong');
+                showToast('未入力', '合計金額を入力してね。', '✍️', 'amber');
+                return;
+            }
+
+            if (inputVal === actualTotalSales) {
+                // Correct! Show Confetti, open the sales and trigger sound
                 playSound('correct');
-                triggerConfetti();
-                challengeLevel++;
-                showToast(`大正解！ 正解は「${currentChallenge.answer}円」です！`, '素晴らしい計算のくふうですね！レベルアップ！', '🎉');
-                setTimeout(() => {
-                    generateChallenge();
-                }, 2500);
+                isFreeAnswered = true;
+                updateTotals(); // Reveal values
+                
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+
+                if (currentMode === 'challenge') {
+                    showToast('お見事！正解です！', 'ミッション成功！すばらしい計算スピードだね！', '🏆', 'indigo');
+                    setTimeout(() => {
+                        nextChallenge();
+                    }, 3000);
+                } else {
+                    showToast('正解！ピタゴラス！', `合計売上 ¥${actualTotalSales} をぴったり計算できたよ！`, '🎉', 'emerald');
+                }
             } else {
                 playSound('wrong');
-                showToast('ちがうみたい！', 'あきらめずに計算しなおしてみよう。自販機で買って数えてもOK！', '❌');
+                const difference = Math.abs(actualTotalSales - inputVal);
+                let hintText = 'もういちど計算を確かめてみてね！';
+                if (difference <= 100) hintText = 'おしい！あともう少しだよ！';
+                showToast('ちがうみたいだよ', hintText, '❌', 'rose');
             }
         }
-    </script>
 
-    <script>
-        function showToast(title, body, icon) {
-            const toast = document.getElementById('toast-message');
-            document.getElementById('toast-title').textContent = title;
-            document.getElementById('toast-body').textContent = body;
-            document.getElementById('toast-icon').textContent = icon;
+        // Instant cheat reveal (For diagnostic or helper options)
+        function revealAnswer() {
+            let actualTotalSales = 0;
+            productsDatabase.forEach(p => {
+                actualTotalSales += (p.price * activeQuantities[p.id]);
+            });
 
-            toast.className = "fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl border border-slate-800 z-50 flex items-center gap-3 transition-all duration-300 opacity-100 translate-y-0";
+            if (actualTotalSales === 0) {
+                showToast('売上は ¥0 です', '自動販売機でまだ何も買われていません！', '🤖', 'zinc');
+                return;
+            }
+
+            playSound('button');
+            document.getElementById('free-answer-input').value = actualTotalSales;
+            showToast('答えを表示したよ', 'うりあげ詳細の？？？を計算するとこうなるよ！', '👁️', 'indigo');
+        }
+
+        // Reset everything to clean initial state
+        function resetAll() {
+            playSound('button');
+            productsDatabase.forEach(p => activeQuantities[p.id] = 0);
             
-            setTimeout(() => {
-                toast.className = "fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl border border-slate-800 z-50 flex items-center gap-3 transition-all duration-300 pointer-events-none opacity-0 translate-y-[20px]";
-            }, 3500);
-        }
+            const chamber = document.getElementById('dispense-chamber');
+            chamber.innerHTML = '<span id="dispense-placeholder" class="text-zinc-600 text-[10px] font-bold italic select-none animate-pulse">ジュースがここに落ちてくるよ！</span>';
+            
+            const collectBtn = document.getElementById('collect-btn');
+            collectBtn.disabled = true;
+            collectBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
-        function toggleMute() {
-            isMuted = !isMuted;
-            document.getElementById('mute-icon').textContent = isMuted ? '🔇' : '🔊';
-            document.getElementById('mute-text').textContent = isMuted ? '音量：OFF' : '音量：ON';
-        }
+            isFreeAnswered = false;
+            document.getElementById('free-answer-input').value = '';
+            currentBalance = 0;
+            document.getElementById('machine-display').textContent = '0';
 
-        function openGuideModal() {
-            playSound('button');
-            document.getElementById('guide-modal').classList.remove('hidden');
-        }
-
-        function closeGuideModal() {
-            playSound('button');
-            document.getElementById('guide-modal').classList.add('hidden');
-        }
-
-        // Confetti Effect
-        const confCanvas = document.getElementById('confetti-canvas');
-        const confCtx = confCanvas.getContext('2d');
-        let confActive = false;
-        let confParticles = [];
-
-        function resizeConfetti() {
-            confCanvas.width = window.innerWidth;
-            confCanvas.height = window.innerHeight;
-        }
-
-        function triggerConfetti() {
-            confActive = true;
-            resizeConfetti();
-            confParticles = [];
-
-            for (let i = 0; i < 150; i++) {
-                confParticles.push({
-                    x: Math.random() * confCanvas.width,
-                    y: Math.random() * confCanvas.height - confCanvas.height,
-                    r: Math.random() * 4 + 4,
-                    d: Math.random() * confCanvas.height,
-                    color: `hsl(${Math.random() * 360}, 100%, 55%)`,
-                    tilt: Math.random() * 10 - 5,
-                    tiltAngleIncremental: Math.random() * 0.07 + 0.02,
-                    tiltAngle: 0
-                });
-            }
-            requestAnimationFrame(confettiLoop);
-
-            setTimeout(() => {
-                confActive = false;
-                confCtx.clearRect(0, 0, confCanvas.width, confCanvas.height);
-            }, 3000);
-        }
-
-        function confettiLoop() {
-            if (!confActive) return;
-            confCtx.clearRect(0, 0, confCanvas.width, confCanvas.height);
-
-            confParticles.forEach((p, index) => {
-                p.tiltAngle += p.tiltAngleIncremental;
-                p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
-                p.tilt = Math.sin(p.tiltAngle - index/3) * 15;
-
-                confCtx.beginPath();
-                confCtx.lineWidth = p.r;
-                confCtx.strokeStyle = p.color;
-                confCtx.moveTo(p.x + p.tilt + p.r/2, p.y);
-                canY = p.y + p.tilt + p.r/2;
-                confCtx.lineTo(p.x + p.tilt, canY);
-                confCtx.stroke();
-
-                if (p.y > confCanvas.height) {
-                    confParticles[index].y = -20;
-                    confParticles[index].x = Math.random() * confCanvas.width;
-                }
-            });
-
-            requestAnimationFrame(confettiLoop);
-        }
-
-        // Initialize Everything on Window Load
-        window.onload = function() {
-            checkRealImageAvailability(); // Detects and loads IMG_4022.jpg dynamically
+            updateButtonGlows();
             updateTotals();
-            drawGraph();
+            updateGraph();
+            
+            if (currentMode === 'challenge') {
+                setupChallenge();
+            }
+        }
 
-            window.addEventListener('resize', () => {
-                drawGraph();
-            });
+        // Game Modes Switcher
+        function switchMode(mode) {
+            playSound('button');
+            currentMode = mode;
+            const freeBtn = document.getElementById('mode-free-btn');
+            const challengeBtn = document.getElementById('mode-challenge-btn');
+            const banner = document.getElementById('challenge-banner');
+
+            if (mode === 'free') {
+                freeBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-indigo-900 shadow-sm';
+                challengeBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-indigo-100 hover:bg-white/10';
+                banner.classList.add('hidden');
+                resetAll();
+            } else {
+                challengeBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-indigo-900 shadow-sm';
+                freeBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-indigo-100 hover:bg-white/10';
+                banner.classList.remove('hidden');
+                challengeLevel = 1;
+                setupChallenge();
+            }
+        }
+
+        // Math Vending Challenges generator mapping directly to core lessons in IMG_4021.jpg
+        function setupChallenge() {
+            // Reset state first to avoid accumulation carrying over from free mode
+            productsDatabase.forEach(p => activeQuantities[p.id] = 0);
+            document.getElementById('free-answer-input').value = '';
+            isFreeAnswered = false;
+
+            document.getElementById('challenge-level').textContent = challengeLevel;
+            const textEl = document.getElementById('challenge-text');
+            const tipsEl = document.getElementById('challenge-tips');
+
+            // Generate customized levels focusing on multiplication and distributive properties
+            if (challengeLevel === 1) {
+                // Single beverage multiplication (Level 1)
+                const beverage = productsDatabase[Math.floor(Math.random() * 10)]; // Easy Row 1
+                const count = Math.floor(Math.random() * 5) + 3; // 3 to 7
+                currentChallenge = {
+                    targetId: beverage.id,
+                    targetQty: count,
+                    expectedAnswer: beverage.price * count
+                };
+                textEl.innerHTML = `「${beverage.name}（${beverage.price}円）」が <span class="text-yellow-300 font-extrabold underline">${count}本</span> 売れました。<br>このとき、今日の売上の合計はいくらになるでしょう？`;
+                tipsEl.innerHTML = `💡 <b>計算のくふう：</b> 足し算を繰り返すよりも「${beverage.price} × ${count}」の掛け算を使うとスピーディに答えを出せるよ！`;
+            } else if (challengeLevel === 2) {
+                // Two items multiplication (Level 2)
+                const b1 = productsDatabase[9];  // Coca-Cola (120)
+                const b2 = productsDatabase[21]; // Qoo Apple (140)
+                const c1 = Math.floor(Math.random() * 4) + 3; // 3 to 6
+                const c2 = Math.floor(Math.random() * 4) + 2; // 2 to 5
+
+                currentChallenge = {
+                    complex: true,
+                    expectedAnswer: (b1.price * c1) + (b2.price * c2)
+                };
+                textEl.innerHTML = `「${b1.name}（${b1.price}円）」が <span class="text-yellow-300 font-extrabold underline">${c1}本</span>、「${b2.name}（${b2.price}円）」が <span class="text-yellow-300 font-extrabold underline">${c2}本</span> 売れました。<br>合計金額を計算しよう！`;
+                tipsEl.innerHTML = `💡 <b>計算のくふう：</b> 「${b1.price} × ${c1}」と「${b2.price} × ${c2}」を別々に掛け算してから、最後に２つの答えを足してみよう！`;
+            } else {
+                // Distributive property focus (Level 3 - Distributive law helper from IMG_4021.jpg)
+                const commonPrice = 120; // Mets Lemon Squash
+                const b1 = productsDatabase[12]; // Mets Squash 1 (120)
+                const countMorning = Math.floor(Math.random() * 3) + 3; // 3 to 5
+                const countAfternoon = Math.floor(Math.random() * 3) + 4; // 4 to 6
+
+                currentChallenge = {
+                    complex: true,
+                    expectedAnswer: commonPrice * (countMorning + countAfternoon)
+                };
+                textEl.innerHTML = `「${b1.name}（${commonPrice}円）」が、午前に <span class="text-yellow-300 font-extrabold underline">${countMorning}本</span>、午後に <span class="text-yellow-300 font-extrabold underline">${countAfternoon}本</span> 売れました。<br>一日の総売上を求めてみよう！`;
+                tipsEl.innerHTML = `💡 <b>計算のくふう（分配法則）：</b> 「午前と午後の本数を先に足す」と、<br><b>${commonPrice}円 × (${countMorning}本 ＋ ${countAfternoon}本)</b> になり、1回の掛け算だけでカンタンに解けるよ！`;
+            }
+
+            updateTotals();
+            updateGraph();
+        }
+
+        // Proceed to next level challenge
+        function nextChallenge() {
+            challengeLevel++;
+            if (challengeLevel > 3) {
+                challengeLevel = 1; // loop
+            }
+            setupChallenge();
+        }
+
+        // Proportion (Linear Relationship) Chart Drawer using standard HTML Canvas API
+        function updateGraph() {
+            const canvas = document.getElementById('proportion-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Handle high-dpi screen resizing
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            const width = rect.width;
+            const height = rect.height;
+
+            // Clear previous render
+            ctx.clearRect(0, 0, width, height);
+
+            // Determine what values to track on the chart
+            const filterId = document.getElementById('graph-select').value;
+            let priceCoeff = 120; // Default slope
+            let currentQuantity = 0;
+
+            if (filterId === 'total') {
+                // Use average price or cumulative count
+                let activeUniqueCount = 0;
+                let activePricesSum = 0;
+                productsDatabase.forEach(p => {
+                    if (activeQuantities[p.id] > 0) {
+                        activeUniqueCount += activeQuantities[p.id];
+                        activePricesSum += (p.price * activeQuantities[p.id]);
+                    }
+                });
+                currentQuantity = activeUniqueCount;
+                priceCoeff = currentQuantity > 0 ? (activePricesSum / currentQuantity) : 120;
+            } else {
+                const target = productsDatabase.find(p => p.id === filterId);
+                if (target) {
+                    priceCoeff = target.price;
+                    currentQuantity = activeQuantities[target.id];
+                }
+            }
+
+            // Draw Coordinate Grid Systems
+            const padding = { left: 45, bottom: 25, right: 15, top: 15 };
+            const graphWidth = width - padding.left - padding.right;
+            const graphHeight = height - padding.top - padding.bottom;
+
+            // Coordinate limits
+            const maxQuantity = 12; // Maximum quantity limit on graph
+            const maxSales = maxQuantity * 180; // Peak price limit multiplier
+
+            // Grid background rendering
+            ctx.strokeStyle = '#f1f5f9';
+            ctx.lineWidth = 1;
+            for (let i = 1; i <= 6; i++) {
+                // Horizontal grid dividers
+                const y = padding.top + (graphHeight / 6) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(width - padding.right, y);
+                ctx.stroke();
+            }
+
+            // Draw Axis lines
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding.left, padding.top);
+            ctx.lineTo(padding.left, height - padding.bottom);
+            ctx.lineTo(width - padding.right, height - padding.bottom);
+            ctx.stroke();
+
+            // Label axes text
+            ctx.fillStyle = '#64748b';
+            ctx.font = 'bold 9px sans-serif';
+            ctx.fillText('売上額 (円)', padding.left - 40, padding.top + 5);
+            ctx.fillText('本数 (本)', width - padding.right - 35, height - padding.bottom + 15);
+
+            // X scale markers
+            for (let count = 0; count <= maxQuantity; count += 2) {
+                const x = padding.left + (count / maxQuantity) * graphWidth;
+                ctx.fillText(count, x - 3, height - padding.bottom + 12);
+            }
+
+            // Y scale markers
+            for (let salesVal = 0; salesVal <= maxSales; salesVal += 400) {
+                const y = height - padding.bottom - (salesVal / maxSales) * graphHeight;
+                ctx.fillText(`¥${salesVal}`, padding.left - 38, y + 3);
+            }
+
+            // Map Line plot for proportion (y = ax)
+            ctx.strokeStyle = '#3b82f6'; // Bright Indigo proportion line
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            const startX = padding.left;
+            const startY = height - padding.bottom;
+            ctx.moveTo(startX, startY);
+
+            // Calculate current line boundary coordinates
+            const currentSalesLine = maxQuantity * priceCoeff;
+            const endX = padding.left + graphWidth;
+            const endY = height - padding.bottom - (currentSalesLine / maxSales) * graphHeight;
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+
+            // Render shaded area underneath proportional curve
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.04)';
+            ctx.lineTo(endX, height - padding.bottom);
+            ctx.closePath();
+            ctx.fill();
+
+            // Mark current bought coordinates with interactive glowing circles
+            if (currentQuantity > 0) {
+                const currentYVal = currentQuantity * priceCoeff;
+                const activePointX = padding.left + (currentQuantity / maxQuantity) * graphWidth;
+                const activePointY = height - padding.bottom - (currentYVal / maxSales) * graphHeight;
+
+                // Pulsing glow rings around coordinate point
+                ctx.strokeStyle = 'rgba(234, 179, 8, 0.4)';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.arc(activePointX, activePointY, 7, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Core marker
+                ctx.fillStyle = '#eab308';
+                ctx.beginPath();
+                ctx.arc(activePointX, activePointY, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Text coordinate indicator tooltip above the plot point
+                ctx.fillStyle = '#1e293b';
+                ctx.font = 'extrabold 8px sans-serif';
+                ctx.fillText(`${currentQuantity}本: ¥${Math.round(currentYVal)}`, activePointX - 25, activePointY - 12);
+            }
+        }
+
+        // Beautiful modern toast system wrapper to replace default native popups
+        function showToast(title, body, icon = '🔔', theme = 'blue') {
+            const container = document.getElementById('toast-container');
+            
+            const colors = {
+                blue: 'bg-blue-600 border-blue-500 text-white',
+                emerald: 'bg-emerald-600 border-emerald-500 text-white',
+                rose: 'bg-rose-600 border-rose-500 text-white',
+                yellow: 'bg-yellow-500 border-yellow-400 text-yellow-950',
+                amber: 'bg-amber-600 border-amber-500 text-white',
+                zinc: 'bg-zinc-800 border-zinc-700 text-zinc-100'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `flex gap-3 p-4 rounded-2xl shadow-xl border-2 ${colors[theme]} transform translate-y-2 opacity-0 transition-all duration-300 pointer-events-auto`;
+            toast.innerHTML = `
+                <div class="text-2xl shrink-0 flex items-center justify-center">${icon}</div>
+                <div>
+                    <h4 class="font-black text-xs tracking-wide">${title}</h4>
+                    <p class="text-[10px] opacity-90 mt-0.5 leading-normal font-bold">${body}</p>
+                </div>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate entry trigger
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Autodestruct timer
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 4000);
+        }
+
+        // Window resize listeners to keep coordinate calculations precise on various display views
+        window.onresize = function() {
+            updateGraph();
+        };
+
+        // Window load wrapper to securely launch application
+        window.onload = function() {
+            initVendingMachine();
         };
     </script>
 </body>
