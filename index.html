@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リアル自販機かけ算うりあげゲーム</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti (紙吹雪演出用) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* アニメーション用 */
+        @keyframes drop {
+            0% { transform: translateY(-200px) rotate(0deg); opacity: 0; }
+            50% { transform: translateY(0) rotate(15deg); opacity: 1; }
+            70% { transform: translateY(-20px) rotate(-10deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+        .animate-drop {
+            animation: drop 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased">
+
+    <!-- ヘッダー（スクロールすると消える） -->
+    <header class="bg-white shadow-sm border-b border-gray-200 py-4 px-6 mb-6">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    🏪 リアル自販機かけ算うりあげゲーム
+                </h1>
+                <p class="text-sm text-gray-600 mt-1">自販機のボタンを押して、売上の計算をマスターしよう！</p>
+            </div>
+            <!-- モード切り替え -->
+            <div class="flex bg-gray-200 p-1 rounded-lg">
+                <button id="btn-mode-free" onclick="switchMode('free')" class="px-4 py-2 rounded-md font-bold text-sm transition-all bg-white text-blue-600 shadow-sm">
+                    自由にお買い物
+                </button>
+                <button id="btn-mode-quiz" onclick="switchMode('quiz')" class="px-4 py-2 rounded-md font-bold text-sm transition-all text-gray-600 hover:text-gray-900">
+                    うりあげチャレンジ (クイズ)
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- 左側：リアル自動販売機 (5カラム) -->
+            <div class="lg:col-span-5 flex flex-col items-center">
+                <div class="w-full max-w-md bg-zinc-800 rounded-3xl p-4 shadow-2xl border-4 border-zinc-700 relative">
+                    <div class="bg-stone-900 rounded-xl p-2 border-2 border-stone-700 shadow-inner relative overflow-hidden bg-gradient-to-b from-stone-800 to-stone-950">
+                        
+                        <!-- 飲料棚（3段構成、各段10本） -->
+                        <div id="vending-shelves" class="space-y-4">
+                            <!-- JSで30本のドリンクがここに生成されます -->
+                        </div>
+
+                    </div>
+
+                    <!-- 商品取り出し口 -->
+                    <div class="mt-6 bg-zinc-900 rounded-xl p-4 border-2 border-zinc-950 h-32 relative shadow-inner overflow-hidden flex items-center justify-center">
+                        <div class="absolute top-0 left-0 right-0 h-2 bg-zinc-950 shadow-md"></div>
+                        <div id="delivery-slot" class="flex gap-2 items-end justify-center w-full h-full pb-2 overflow-x-auto"></div>
+                        <div class="absolute inset-0 bg-black/10 pointer-events-none border-b-4 border-zinc-950 rounded-xl"></div>
+                    </div>
+                    
+                    <div class="mt-4 flex justify-between items-center px-4 text-xs text-zinc-500 font-mono">
+                        <div>COLD & HOT SYSTEM</div>
+                        <div class="w-8 h-8 bg-zinc-900 rounded-full border border-zinc-700 shadow-inner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：学習・計算エリア (7カラム) -->
+            <div class="lg:col-span-7 space-y-6">
+                
+                <!-- 自由モードパネル -->
+                <div id="panel-free" class="bg-white rounded-2xl p-6 shadow-md border border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        ✍️ 自分でうりあげを計算しよう！
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">
+                        左の自販機でジュースを選んでボタンを押してね。買った分の合計金額を計算して入力しよう！
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 items-end bg-blue-50 p-4 rounded-xl border border-blue-100">
+                        <div class="flex-1">
+                            <label class="block text-sm font-bold text-blue-800 mb-1">売上の合計金額（円）</label>
+                            <input type="number" id="input-free-answer" placeholder="例: 960" class="w-full text-xl p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-500 text-center font-bold">
+                        </div>
+                        <button onclick="checkFreeAnswer()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg px-8 py-3 rounded-lg shadow-md transition-colors whitespace-nowrap">
+                            答え合わせ！
+                        </button>
+                    </div>
+                    <div id="free-feedback" class="mt-3 text-center font-bold text-lg hidden"></div>
+                </div>
+
+                <!-- チャレンジモード（クイズ）パネル -->
+                <div id="panel-quiz" class="bg-white rounded-2xl p-6 shadow-md border border-gray-200 hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-bold text-red-600 flex items-center gap-2">
+                            🎯 ミッションチャレンジ
+                        </h3>
+                        <span id="quiz-score" class="bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full text-xs">スコア: 0</span>
+                    </div>
+                    
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4">
+                        <p id="quiz-question" class="text-lg font-medium text-gray-800 leading-relaxed">問題を生成中...</p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 items-end bg-red-50 p-4 rounded-xl border border-red-100">
+                        <div class="flex-1">
+                            <label class="block text-sm font-bold text-red-800 mb-1">答えの合計金額（円）</label>
+                            <input type="number" id="input-quiz-answer" placeholder="例: 1200" class="w-full text-xl p-3 border-2 border-red-300 rounded-lg focus:outline-none focus:border-red-500 text-center font-bold">
+                        </div>
+                        <button onclick="checkQuizAnswer()" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold text-lg px-8 py-3 rounded-lg shadow-md transition-colors whitespace-nowrap">
+                            回答する
+                        </button>
+                    </div>
+                    <div id="quiz-feedback" class="mt-3 text-center font-bold text-lg hidden"></div>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <button onclick="showQuizHint()" class="text-xs text-gray-500 hover:text-gray-700 underline">ヒントを見る</button>
+                        <button onclick="generateQuiz()" class="text-xs text-red-600 hover:text-red-800 font-bold underline ml-4">次の問題へパス</button>
+                    </div>
+                </div>
+
+                <!-- かけざん表 -->
+                <div class="bg-white rounded-2xl p-6 shadow-md border border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            📊 売上のかけざん表
+                        </h3>
+                        <button onclick="clearSales()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded border border-gray-300 transition-colors">
+                            リセット
+                        </button>
+                    </div>
+
+                    <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    <th class="py-3 px-4">商品名</th>
+                                    <th class="py-3 px-4 text-center">単価</th>
+                                    <th class="py-3 px-4 text-center">✕ 本数</th>
+                                    <th class="py-3 px-4 text-right">売上金額</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sales-table-body" class="divide-y divide-gray-200 text-sm">
+                                <!-- スクロール制限なしですべて表示 -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-4 bg-gray-900 text-white p-4 rounded-xl flex justify-between items-center shadow-md">
+                        <span class="text-sm font-bold tracking-wide text-zinc-400">うりあげ合計金額</span>
+                        <span id="total-display" class="text-3xl font-mono font-bold text-green-400">???? 円</span>
+                    </div>
+                </div>
+
+                <!-- 比例のグラフ -->
+                <div class="bg-white rounded-2xl p-6 shadow-md border border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                        📈 本数とうりあげの比例グラフ
+                    </h3>
+                    <p class="text-xs text-gray-500 mb-4">本数が増えると、売上もまっすぐ右肩上がりに増えていくよ（y = ax）</p>
+                    <div class="flex justify-center bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <canvas id="proportion-chart" width="500" height="260" class="w-full max-w-lg"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- 音声効果用のWeb Audio API -->
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+            if (type === 'click') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+                gain.gain.setValueAtTime(0.5, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'correct') {
+                osc.type = 'sine'; const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, index) => { osc.frequency.setValueAtTime(freq, now + index * 0.08); });
+                gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(180, now);
+                osc.frequency.setValueAtTime(150, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            }
+        }
+    </script>
+
+    <script>
+        // ====================================================================
+        // 🚨【ここを書き換えてね！】ドリンクデータと写真ファイルの設定
+        // ====================================================================
+        // image のあとの "" の中に、自分で用意した画像ファイル名を入れてください。
+        // 例: image: "pocari.jpg" や、フォルダに入れているなら image: "images/cola.png"
+        // ※ 画像を入れない（"" のまま）場合、自動でドリンク名の書かれたきれいな箱になります。
+        // ====================================================================
+        const productsDatabase = [
+            // --- 上段 (10本) ---
+            { id: 1, name: "ポカリスエット", price: 170, row: 0, col: 0, image: "" },
+            { id: 2, name: "果汁100% ぶどう", price: 170, row: 0, col: 1, image: "" },
+            { id: 3, name: "ZERO サイダー", price: 130, row: 0, col: 2, image: "" },
+            { id: 4, name: "やかんの麦茶 (大)", price: 140, row: 0, col: 3, image: "" },
+            { id: 5, name: "やかんの麦茶", price: 140, row: 0, col: 4, image: "" },
+            { id: 6, name: "ジョージア ブラック", price: 130, row: 0, col: 5, image: "" },
+            { id: 7, name: "ジョージア ラテ", price: 140, row: 0, col: 6, image: "" },
+            { id: 8, name: "ウィルキンソン レモン", price: 120, row: 0, col: 7, image: "" },
+            { id: 9, name: "レモンティー 微糖", price: 140, row: 0, col: 8, image: "" },
+            { id: 10, name: "コカ・コーラ 缶", price: 120, row: 0, col: 9, image: "" },
+
+            // --- 中段 (10本) ---
+            { id: 11, name: "ソルティライチ A", price: 170, row: 1, col: 0, image: "" },
+            { id: 12, name: "ソルティライチ B", price: 170, row: 1, col: 1, image: "" },
+            { id: 13, name: "メッツ レモンスカッシュ A", price: 130, row: 1, col: 2, image: "" },
+            { id: 14, name: "メッツ レモンスカッシュ B", price: 130, row: 1, col: 3, image: "" },
+            { id: 15, name: "小岩井 バナナオレ", price: 160, row: 1, col: 4, image: "" },
+            { id: 16, name: "いろはす 天然水", price: 120, row: 1, col: 5, image: "" },
+            { id: 17, name: "いろはす もも", price: 130, row: 1, col: 6, image: "" },
+            { id: 18, name: "いろはす なし", price: 130, row: 1, col: 7, image: "" },
+            { id: 19, name: "オロナミンC A", price: 120, row: 1, col: 8, image: "" },
+            { id: 20, name: "オロナミンC B", price: 120, row: 1, col: 9, image: "" },
+
+            // --- 下段 (10本) ---
+            { id: 21, name: "北海道 コーン茶", price: 140, row: 2, col: 0, image: "" },
+            { id: 22, name: "Qoo りんご", price: 140, row: 2, col: 1, image: "" },
+            { id: 23, name: "アクエリアス スパークリング", price: 130, row: 2, col: 2, image: "" },
+            { id: 24, name: "スプライト", price: 130, row: 2, col: 3, image: "" },
+            { id: 25, name: "アロエ & 白ぶどう", price: 140, row: 2, col: 4, image: "" },
+            { id: 26, name: "マルチビタミン オレンジ A", price: 140, row: 2, col: 5, image: "" },
+            { id: 27, name: "マルチビタミン オレンジ B", price: 140, row: 2, col: 6, image: "" },
+            { id: 28, name: "ジョージア カフェココア", price: 140, row: 2, col: 7, image: "" },
+            { id: 29, name: "香るブラック 缶コーヒー", price: 140, row: 2, col: 8, image: "" },
+            { id: 30, name: "ワンダ モーニングショット", price: 130, row: 2, col: 9, image: "" }
+        ];
+
+        let cart = {};
+        let currentMode = 'free';
+        let currentQuizAnswer = 0;
+        let quizScore = 0;
+        let isRevealed = false;
+
+        // 初期化実行
+        initVendingMachine();
+
+        // 自販機の画面を構築する関数
+        function initVendingMachine() {
+            const shelvesContainer = document.getElementById('vending-shelves');
+            shelvesContainer.innerHTML = '';
+
+            for (let r = 0; r < 3; r++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = "grid grid-cols-10 gap-1 bg-zinc-900/60 p-1 rounded-lg relative border border-zinc-800 shadow-md";
+                
+                for (let c = 0; c < 10; c++) {
+                    const item = productsDatabase.find(p => p.row === r && p.col === c);
+                    if (item) {
+                        const itemWrapper = document.createElement('div');
+                        itemWrapper.className = "flex flex-col items-center justify-between h-24 relative group";
+                        
+                        // 画像表示エリア（手動設定に対応）
+                        const imgDiv = document.createElement('div');
+                        imgDiv.className = "w-full aspect-[2/3] rounded shadow-sm border border-white/10 bg-center bg-contain bg-no-repeat transition-all";
+                        
+                        if (item.image && item.image.trim() !== "") {
+                            // 手動で画像ファイルが設定されている場合
+                            imgDiv.style.backgroundImage = `url('${item.image}')`;
+                        } else {
+                            // 画像がない場合のフォールバック（文字入りのきれいな色の箱）
+                            imgDiv.classList.add('bg-zinc-700', 'flex', 'items-center', 'justify-center', 'text-[8px]', 'text-zinc-300', 'p-0.5', 'text-center', 'leading-tight');
+                            imgDiv.textContent = item.name;
+                        }
+                        
+                        // ボタン
+                        const btn = document.createElement('button');
+                        btn.className = "w-full mt-1 bg-blue-600 hover:bg-blue-500 active:scale-95 text-[7px] text-white font-bold py-0.5 rounded shadow border-t border-blue-400 text-center transition-all overflow-hidden whitespace-nowrap select-none";
+                        btn.innerHTML = `¥${item.price}<br>つめた〜い`;
+                        btn.onclick = () => pressButton(item.id);
+
+                        itemWrapper.appendChild(imgDiv);
+                        itemWrapper.appendChild(btn);
+                        rowDiv.appendChild(itemWrapper);
+                    }
+                }
+                shelvesContainer.appendChild(rowDiv);
+            }
+            updateUI();
+        }
+
+        // ボタンが押されたとき
+        function pressButton(id) {
+            playSound('click');
+            if (!cart[id]) cart[id] = 0;
+            cart[id]++;
+            
+            if (currentMode === 'free') {
+                isRevealed = false;
+                document.getElementById('free-feedback').className = "hidden";
+            }
+
+            // 取り出し口への落下要素（手動設定の画像に対応）
+            const item = productsDatabase.find(p => p.id === id);
+            const slot = document.getElementById('delivery-slot');
+            
+            const dropItem = document.createElement('div');
+            dropItem.className = "w-8 h-12 rounded shadow-md animate-drop shrink-0 bg-center bg-contain bg-no-repeat relative cursor-pointer";
+            
+            if (item.image && item.image.trim() !== "") {
+                dropItem.style.backgroundImage = `url('${item.image}')`;
+            } else {
+                dropItem.classList.add('bg-zinc-600', 'flex', 'items-center', 'justify-center', 'text-[6px]', 'text-zinc-200', 'p-0.5', 'text-center');
+                dropItem.textContent = item.name;
+            }
+            
+            dropItem.onclick = function() { dropItem.remove(); };
+            slot.appendChild(dropItem);
+            slot.scrollLeft = slot.scrollWidth;
+
+            updateUI();
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.getElementById('btn-mode-free').className = mode === 'free' ? "px-4 py-2 rounded-md font-bold text-sm transition-all bg-white text-blue-600 shadow-sm" : "px-4 py-2 rounded-md font-bold text-sm transition-all text-gray-600 hover:text-gray-900";
+            document.getElementById('btn-mode-quiz').className = mode === 'quiz' ? "px-4 py-2 rounded-md font-bold text-sm transition-all bg-white text-red-600 shadow-sm" : "px-4 py-2 rounded-md font-bold text-sm transition-all text-gray-600 hover:text-gray-900";
+
+            if (mode === 'free') {
+                document.getElementById('panel-free').classList.remove('hidden');
+                document.getElementById('panel-quiz').classList.add('hidden');
+                isRevealed = false;
+            } else {
+                document.getElementById('panel-free').classList.add('hidden');
+                document.getElementById('panel-quiz').classList.remove('hidden');
+                isRevealed = true;
+                generateQuiz();
+            }
+            updateUI();
+        }
+
+        function clearSales() {
+            cart = {};
+            isRevealed = currentMode === 'quiz';
+            document.getElementById('delivery-slot').innerHTML = '';
+            document.getElementById('input-free-answer').value = '';
+            document.getElementById('free-feedback').className = "hidden";
+            updateUI();
+        }
+
+        function updateUI() {
+            const tbody = document.getElementById('sales-table-body');
+            tbody.innerHTML = '';
+            let totalAmount = 0;
+            const activeProducts = [];
+
+            productsDatabase.forEach(product => {
+                const count = cart[product.id] || 0;
+                if (count > 0) {
+                    const subtotal = product.price * count;
+                    totalAmount += subtotal;
+                    activeProducts.push({ product, count, subtotal });
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 transition-colors";
+                    const displaySubtotal = isRevealed ? `${subtotal.toLocaleString()} 円` : "？？？ 円";
+
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 font-medium text-gray-900">${product.name}</td>
+                        <td class="py-3 px-4 text-center font-mono text-gray-600">${product.price}円</td>
+                        <td class="py-3 px-4 text-center font-bold text-blue-600">${count}本</td>
+                        <td class="py-3 px-4 text-right font-mono font-bold text-gray-900">${displaySubtotal}</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+
+            if (activeProducts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-gray-400">ジュースが選ばれていません。ボタンを押してね！</td></tr>`;
+            }
+
+            const totalDisplay = document.getElementById('total-display');
+            if (isRevealed) {
+                totalDisplay.textContent = `${totalAmount.toLocaleString()} 円`;
+                totalDisplay.className = "text-3xl font-mono font-bold text-green-400 animate-pulse";
+            } else {
+                totalDisplay.textContent = "???? 円";
+                totalDisplay.className = "text-3xl font-mono font-bold text-amber-400";
+            }
+
+            renderGraph(activeProducts);
+        }
+
+        function checkFreeAnswer() {
+            let actualTotal = 0;
+            productsDatabase.forEach(p => { actualTotal += p.price * (cart[p.id] || 0); });
+            const inputEl = document.getElementById('input-free-answer');
+            const userAns = parseInt(inputEl.value, 10);
+            const feedback = document.getElementById('free-feedback');
+
+            if (isNaN(userAns)) {
+                feedback.textContent = "⚠️ 数字を入力してね！";
+                feedback.className = "mt-3 text-center font-bold text-lg text-amber-600";
+                return;
+            }
+
+            if (userAns === actualTotal) {
+                playSound('correct');
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                feedback.textContent = "🎉 大正解！ぴったりです！";
+                feedback.className = "mt-3 text-center font-bold text-lg text-green-600 animate-bounce";
+                isRevealed = true;
+                updateUI();
+            } else {
+                playSound('wrong');
+                feedback.textContent = "❌ ちがうみたい。もう一度計算してみよう！";
+                feedback.className = "mt-3 text-center font-bold text-lg text-red-600";
+            }
+        }
+
+        function generateQuiz() {
+            document.getElementById('input-quiz-answer').value = '';
+            document.getElementById('quiz-feedback').className = "hidden";
+            const p1 = productsDatabase[Math.floor(Math.random() * productsDatabase.length)];
+            let p2 = productsDatabase[Math.floor(Math.random() * productsDatabase.length)];
+            while (p1.id === p2.id) { p2 = productsDatabase[Math.floor(Math.random() * productsDatabase.length)]; }
+
+            const isSameCount = Math.random() > 0.5;
+            const count1 = Math.floor(Math.random() * 8) + 2;
+            const count2 = isSameCount ? count1 : Math.floor(Math.random() * 8) + 2;
+
+            currentQuizAnswer = (p1.price * count1) + (p2.price * count2);
+
+            const qText = isSameCount 
+                ? `🎯 <strong>【計算のくふう問題】</strong><br>自動販売機で<strong>${p1.name}（${p1.price}円）</strong>を <strong>${count1}本</strong>と、<strong>${p2.name}（${p2.price}円）</strong>を <strong>${count2}本</strong>買いました。あわせていくらになるでしょう？（先にたし算できるかな？）`
+                : `🎯 <strong>【売上計算問題】</strong><br>自動販売機で<strong>${p1.name}（${p1.price}円）</strong>が <strong>${count1}本</strong>、<strong>${p2.name}（${p2.price}円）</strong>が <strong>${count2}本</strong>売れました。売上の合計はいくらでしょう？`;
+
+            document.getElementById('quiz-question').innerHTML = qText;
+        }
+
+        function checkQuizAnswer() {
+            const userAns = parseInt(document.getElementById('input-quiz-answer').value, 10);
+            const feedback = document.getElementById('quiz-feedback');
+
+            if (userAns === currentQuizAnswer) {
+                playSound('correct');
+                confetti({ particleCount: 130, spread: 80, origin: { y: 0.6 } });
+                feedback.textContent = "💖 天才！正解です！";
+                feedback.className = "mt-3 text-center font-bold text-lg text-green-600";
+                quizScore += 10;
+                document.getElementById('quiz-score').textContent = `スコア: ${quizScore}`;
+                setTimeout(generateQuiz, 2500);
+            } else {
+                playSound('wrong');
+                feedback.textContent = "😢 残念！ちがうみたい。ノートに書いて計算してみてね。";
+                feedback.className = "mt-3 text-center font-bold text-lg text-red-600";
+            }
+        }
+
+        function showQuizHint() {
+            alert(`【ヒント】\nそれぞれの掛け算を計算して足してみよう！\n式：(単価 × 本数) + (単価 × 本数) = 合計金額\n答えは「${currentQuizAnswer}円」だよ。`);
+        }
+
+        function renderGraph(activeProducts) {
+            const canvas = document.getElementById('proportion-chart');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const padding = 40;
+            const graphWidth = canvas.width - padding * 2;
+            const graphHeight = canvas.height - padding * 2;
+
+            ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(padding, padding); ctx.lineTo(padding, canvas.height - padding); ctx.lineTo(canvas.width - padding, canvas.height - padding); ctx.stroke();
+
+            ctx.fillStyle = '#4b5563'; ctx.font = '10px sans-serif';
+            ctx.fillText('売上(円)', padding - 30, padding - 10); ctx.fillText('本数(本)', canvas.width - padding, canvas.height - padding + 15);
+
+            const maxCount = 15; const maxMoney = 2500;
+
+            ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+            for (let i = 5; i <= maxCount; i += 5) {
+                let x = padding + (i / maxCount) * graphWidth;
+                ctx.beginPath(); ctx.moveTo(x, padding); ctx.lineTo(x, canvas.height - padding); ctx.stroke();
+                ctx.fillText(i, x - 3, canvas.height - padding + 12);
+            }
+            for (let i = 500; i <= maxMoney; i += 500) {
+                let y = canvas.height - padding - (i / maxMoney) * graphHeight;
+                ctx.beginPath(); ctx.moveTo(padding, y); ctx.lineTo(canvas.width - padding, y); ctx.stroke();
+                ctx.fillText(i, padding - 28, y + 4);
+            }
+            ctx.fillText('0', padding - 10, canvas.height - padding + 10);
+
+            const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+            activeProducts.forEach((item, idx) => {
+                const color = colors[idx % colors.length];
+                ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath();
+                ctx.moveTo(padding, canvas.height - padding);
+                const currentX = padding + (item.count / maxCount) * graphWidth;
+                const currentY = canvas.height - padding - (item.subtotal / maxMoney) * graphHeight;
+                const targetX = Math.min(currentX, canvas.width - padding);
+                const targetY = Math.max(currentY, padding);
+                ctx.lineTo(targetX, targetY); ctx.stroke();
+
+                ctx.fillStyle = color; ctx.beginPath(); ctx.arc(targetX, targetY, 5, 0, Math.PI * 2); ctx.fill();
+                ctx.font = '9px sans-serif'; ctx.fillText(item.product.name.substring(0,6), targetX - 15, targetY - 8);
+            });
+        }
+    </script>
+</body>
+</html>
