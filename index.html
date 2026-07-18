@@ -482,43 +482,43 @@
     <script>
         // Comprehensive 30-Beverage Database modeled after the real vending machine image (IMG_4022.jpg)
         // Includes X and Y percentages to crop individual bottles straight from "IMG_4022.jpg"
-        // Also contains high-quality Unsplash fallbacks if IMG_4022.jpg is not found.
+        // Also contains local path with fallback if IMG_4022.jpg or individual images are not found.
         const productsDatabase = [
             // Row 1 (Top, 10 items)
-            { id: 'p1', name: 'ポカリスエット', price: 170, row: 1, type: 'special', color: '#1e3a8a', pop: '熱中症対策', spriteX: 9.5, spriteY: 11, imgUrl: 'https://images.unsplash.com/photo-1527661591475-527312dd65f5?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p2', name: '100%グレープ', price: 170, row: 1, type: 'special', color: '#581c87', pop: '贅沢果汁', spriteX: 18.2, spriteY: 11, imgUrl: 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p3', name: 'ゼロサイダー', price: 180, row: 1, type: 'special', color: '#0369a1', pop: 'カロリー0', spriteX: 27.2, spriteY: 11, imgUrl: 'https://images.unsplash.com/photo-1437419764061-2473afe69fc2?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p4', name: 'やかん麦茶', price: 140, row: 1, type: 'tea', color: '#c2410c', pop: '香ばしい', spriteX: 36.2, spriteY: 11, imgUrl: 'https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p5', name: 'やかん麦茶(大)', price: 140, row: 1, type: 'tea', color: '#c2410c', pop: 'カフェイン0', spriteX: 45.2, spriteY: 11, imgUrl: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p6', name: 'ボス ブラック', price: 180, row: 1, type: 'coffee', color: '#18181b', pop: 'THE BLACK', spriteX: 54.2, spriteY: 11, imgUrl: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p7', name: 'ボス ラテ', price: 180, row: 1, type: 'coffee', color: '#d97706', pop: 'THE LATTE', spriteX: 63.2, spriteY: 11, imgUrl: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p8', name: 'レモン微炭酸', price: 120, row: 1, type: 'special', color: '#0284c7', pop: '刺激強め', spriteX: 72.2, spriteY: 11, imgUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p9', name: 'レモンティー', price: 140, row: 1, type: 'tea', color: '#eab308', pop: '甘さすっきり', spriteX: 81.2, spriteY: 11, imgUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p10', name: 'コカコーラ缶', price: 120, row: 1, type: 'cola', color: '#dc2626', pop: 'Coke ON', spriteX: 90.5, spriteY: 11, imgUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=120&h=180&q=80' },
+            { id: 'p1', name: 'ポカリスエット', price: 170, row: 1, type: 'special', color: '#1e3a8a', pop: '熱中症対策', spriteX: 9.5, spriteY: 11, imgUrl: 'images/p1.png' },
+            { id: 'p2', name: '100%グレープ', price: 170, row: 1, type: 'special', color: '#581c87', pop: '贅沢果汁', spriteX: 18.2, spriteY: 11, imgUrl: 'images/p2.png' },
+            { id: 'p3', name: 'ゼロサイダー', price: 180, row: 1, type: 'special', color: '#0369a1', pop: 'カロリー0', spriteX: 27.2, spriteY: 11, imgUrl: 'images/p3.png' },
+            { id: 'p4', name: 'やかん麦茶', price: 140, row: 1, type: 'tea', color: '#c2410c', pop: '香ばしい', spriteX: 36.2, spriteY: 11, imgUrl: 'images/p4.png' },
+            { id: 'p5', name: 'やかん麦茶(大)', price: 140, row: 1, type: 'tea', color: '#c2410c', pop: 'カフェイン0', spriteX: 45.2, spriteY: 11, imgUrl: 'images/p5.png' },
+            { id: 'p6', name: 'ボス ブラック', price: 180, row: 1, type: 'coffee', color: '#18181b', pop: 'THE BLACK', spriteX: 54.2, spriteY: 11, imgUrl: 'images/p6.png' },
+            { id: 'p7', name: 'ボス ラテ', price: 180, row: 1, type: 'coffee', color: '#d97706', pop: 'THE LATTE', spriteX: 63.2, spriteY: 11, imgUrl: 'images/p7.png' },
+            { id: 'p8', name: 'レモン微炭酸', price: 120, row: 1, type: 'special', color: '#0284c7', pop: '刺激強め', spriteX: 72.2, spriteY: 11, imgUrl: 'images/p8.png' },
+            { id: 'p9', name: 'レモンティー', price: 140, row: 1, type: 'tea', color: '#eab308', pop: '甘さすっきり', spriteX: 81.2, spriteY: 11, imgUrl: 'images/p9.png' },
+            { id: 'p10', name: 'コカコーラ缶', price: 120, row: 1, type: 'cola', color: '#dc2626', pop: 'Coke ON', spriteX: 90.5, spriteY: 11, imgUrl: 'images/p10.png' },
 
             // Row 2 (Middle, 10 items)
-            { id: 'p11', name: 'ソルティライチ', price: 170, row: 2, type: 'special', color: '#0284c7', pop: '水分補給', spriteX: 9.5, spriteY: 51, imgUrl: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p12', name: 'ソルティライチ', price: 170, row: 2, type: 'special', color: '#0284c7', pop: '熱中症対策', spriteX: 18.2, spriteY: 51, imgUrl: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p13', name: 'レモンスカッシュ', price: 120, row: 2, type: 'special', color: '#65a30d', pop: 'Mets', spriteX: 27.2, spriteY: 51, imgUrl: 'https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p14', name: 'レモンスカッシュ', price: 120, row: 2, type: 'special', color: '#65a30d', pop: '強炭酸', spriteX: 36.2, spriteY: 51, imgUrl: 'https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p15', name: 'バナナオレ', price: 120, row: 2, type: 'special', color: '#ca8a04', pop: 'まろやか', spriteX: 45.2, spriteY: 51, imgUrl: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p16', name: 'いろはす天然水', price: 120, row: 2, type: 'special', color: '#38bdf8', pop: '天然水', spriteX: 54.2, spriteY: 51, imgUrl: 'https://images.unsplash.com/photo-1608885898957-a599fb1b4641?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p17', name: 'いろはす天然水', price: 120, row: 2, type: 'special', color: '#38bdf8', pop: '日本の水', spriteX: 63.2, spriteY: 51, imgUrl: 'https://images.unsplash.com/photo-1608885898957-a599fb1b4641?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p18', name: 'いろはすれもん', price: 140, row: 2, type: 'special', color: '#38bdf8', pop: 'すっきり', spriteX: 72.2, spriteY: 51, imgUrl: 'https://images.unsplash.com/photo-1550259114-ad7188f0a967?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p19', name: 'オロナミンC', price: 130, row: 2, type: 'special', color: '#b91c1c', pop: '元気ハツラツ', spriteX: 81.2, spriteY: 51, imgUrl: 'https://images.unsplash.com/photo-1622543953490-0b70d38e2ec1?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p20', name: 'オロナミンC', price: 130, row: 2, type: 'special', color: '#b91c1c', pop: 'ビタミンC', spriteX: 90.5, spriteY: 51, imgUrl: 'https://images.unsplash.com/photo-1622543953490-0b70d38e2ec1?auto=format&fit=crop&w=120&h=180&q=80' },
+            { id: 'p11', name: 'ソルティライチ', price: 170, row: 2, type: 'special', color: '#0284c7', pop: '水分補給', spriteX: 9.5, spriteY: 51, imgUrl: 'images/p11.png' },
+            { id: 'p12', name: 'ソルティライチ', price: 170, row: 2, type: 'special', color: '#0284c7', pop: '熱中症対策', spriteX: 18.2, spriteY: 51, imgUrl: 'images/p12.png' },
+            { id: 'p13', name: 'レモンスカッシュ', price: 120, row: 2, type: 'special', color: '#65a30d', pop: 'Mets', spriteX: 27.2, spriteY: 51, imgUrl: 'images/p13.png' },
+            { id: 'p14', name: 'レモンスカッシュ', price: 120, row: 2, type: 'special', color: '#65a30d', pop: '強炭酸', spriteX: 36.2, spriteY: 51, imgUrl: 'images/p14.png' },
+            { id: 'p15', name: 'バナナオレ', price: 120, row: 2, type: 'special', color: '#ca8a04', pop: 'まろやか', spriteX: 45.2, spriteY: 51, imgUrl: 'images/p15.png' },
+            { id: 'p16', name: 'いろはす天然水', price: 120, row: 2, type: 'special', color: '#38bdf8', pop: '天然水', spriteX: 54.2, spriteY: 51, imgUrl: 'images/p16.png' },
+            { id: 'p17', name: 'いろはす天然水', price: 120, row: 2, type: 'special', color: '#38bdf8', pop: '日本の水', spriteX: 63.2, spriteY: 51, imgUrl: 'images/p17.png' },
+            { id: 'p18', name: 'いろはすれもん', price: 140, row: 2, type: 'special', color: '#38bdf8', pop: 'すっきり', spriteX: 72.2, spriteY: 51, imgUrl: 'images/p18.png' },
+            { id: 'p19', name: 'オロナミンC', price: 130, row: 2, type: 'special', color: '#b91c1c', pop: '元気ハツラツ', spriteX: 81.2, spriteY: 51, imgUrl: 'images/p19.png' },
+            { id: 'p20', name: 'オロナミンC', price: 130, row: 2, type: 'special', color: '#b91c1c', pop: 'ビタミンC', spriteX: 90.5, spriteY: 51, imgUrl: 'images/p20.png' },
 
             // Row 3 (Bottom, 10 items)
-            { id: 'p21', name: '北海道コーン茶', price: 140, row: 3, type: 'tea', color: '#d97706', pop: '香ばしい', spriteX: 9.5, spriteY: 90.5, imgUrl: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p22', name: 'Qoo りんご', price: 140, row: 3, type: 'special', color: '#ea580c', pop: '果汁100%', spriteX: 18.2, spriteY: 90.5, imgUrl: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p23', name: 'アクエリアスSP', price: 120, row: 3, type: 'special', color: '#1d4ed8', pop: '炭酸', spriteX: 27.2, spriteY: 90.5, imgUrl: 'https://images.unsplash.com/photo-1551698618-1ffd5f97df44?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p24', name: 'スプライト', price: 120, row: 3, type: 'special', color: '#15803d', pop: '爽快', spriteX: 36.2, spriteY: 90.5, imgUrl: 'https://images.unsplash.com/photo-1625772290748-160b2a60db2a?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p25', name: 'アロエ白ぶどう', price: 150, row: 3, type: 'special', color: '#16a34a', pop: 'ヘルシー', spriteX: 45.2, spriteY: 90.5, imgUrl: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p26', name: 'デカビタC', price: 140, row: 3, type: 'special', color: '#ea580c', pop: 'マルチビタミン', spriteX: 54.2, spriteY: 90.5, imgUrl: 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p27', name: 'デカビタC', price: 140, row: 3, type: 'special', color: '#ea580c', pop: '1日分', spriteX: 63.2, spriteY: 90.5, imgUrl: 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p28', name: 'アイスココア', price: 160, row: 3, type: 'coffee', color: '#7c2d12', pop: '濃厚', spriteX: 72.2, spriteY: 90.5, imgUrl: 'https://images.unsplash.com/photo-1541658016709-82535e94bc69?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p29', name: 'ボス香るブラック', price: 160, row: 3, type: 'coffee', color: '#18181b', pop: '高級豆', spriteX: 81.2, spriteY: 90.5, imgUrl: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=120&h=180&q=80' },
-            { id: 'p30', name: 'ワンダアイス', price: 130, row: 3, type: 'coffee', color: '#0284c7', pop: '甘さすっきり', spriteX: 90.5, spriteY: 90.5, imgUrl: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=120&h=180&q=80' }
+            { id: 'p21', name: '北海道コーン茶', price: 140, row: 3, type: 'tea', color: '#d97706', pop: '香ばしい', spriteX: 9.5, spriteY: 90.5, imgUrl: 'images/p21.png' },
+            { id: 'p22', name: 'Qoo りんご', price: 140, row: 3, type: 'special', color: '#ea580c', pop: '果汁100%', spriteX: 18.2, spriteY: 90.5, imgUrl: 'images/p22.png' },
+            { id: 'p23', name: 'アクエリアスSP', price: 120, row: 3, type: 'special', color: '#1d4ed8', pop: '炭酸', spriteX: 27.2, spriteY: 90.5, imgUrl: 'images/p23.png' },
+            { id: 'p24', name: 'スプライト', price: 120, row: 3, type: 'special', color: '#15803d', pop: '爽快', spriteX: 36.2, spriteY: 90.5, imgUrl: 'images/p24.png' },
+            { id: 'p25', name: 'アロエ白ぶどう', price: 150, row: 3, type: 'special', color: '#16a34a', pop: 'ヘルシー', spriteX: 45.2, spriteY: 90.5, imgUrl: 'images/p25.png' },
+            { id: 'p26', name: 'デカビタC', price: 140, row: 3, type: 'special', color: '#ea580c', pop: 'マルチビタミン', spriteX: 54.2, spriteY: 90.5, imgUrl: 'images/p26.png' },
+            { id: 'p27', name: 'デカビタC', price: 140, row: 3, type: 'special', color: '#ea580c', pop: '1日分', spriteX: 63.2, spriteY: 90.5, imgUrl: 'images/p27.png' },
+            { id: 'p28', name: 'アイスココア', price: 160, row: 3, type: 'coffee', color: '#7c2d12', pop: '濃厚', spriteX: 72.2, spriteY: 90.5, imgUrl: 'images/p28.png' },
+            { id: 'p29', name: 'ボス香るブラック', price: 160, row: 3, type: 'coffee', color: '#18181b', pop: '高級豆', spriteX: 81.2, spriteY: 90.5, imgUrl: 'images/p29.png' },
+            { id: 'p30', name: 'ワンダアイス', price: 130, row: 3, type: 'coffee', color: '#0284c7', pop: '甘さすっきり', spriteX: 90.5, spriteY: 90.5, imgUrl: 'images/p30.png' }
         ];
 
         // Active Quantities Mapping State (Reactive)
